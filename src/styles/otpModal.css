@@ -1,0 +1,279 @@
+/* =============================================
+   ARL Track – OTP Modal Styles
+   ============================================= */
+
+/* Overlay */
+.otp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+}
+
+/* Modal card */
+.otp-modal {
+  background: #ffffff;
+  width: 100%;
+  max-width: 400px;
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  position: relative;
+  animation: otpFadeIn 0.25s ease;
+}
+
+@keyframes otpFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Icon area */
+.otp-icon {
+  width: 64px;
+  height: 64px;
+  background: #f0f4f9;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  font-size: 1.75rem;
+}
+
+/* Heading */
+.otp-modal h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 0.4rem;
+  letter-spacing: -0.4px;
+}
+
+/* Subtext */
+.otp-modal p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.2rem;
+  line-height: 1.5;
+}
+
+.otp-modal p strong,
+.otp-modal p b {
+  color: #1a1a2e;
+  font-weight: 700;
+  word-break: break-all;
+}
+
+/* OTP boxes */
+.otp-boxes {
+  display: flex;
+  justify-content: center;
+  gap: 0.6rem;
+  margin: 1.75rem 0 1.25rem;
+}
+
+.otp-boxes input {
+  width: 48px;
+  height: 56px;
+  border: 2px solid #e5e7eb;
+  border-radius: 14px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  color: #1a1a2e;
+  background: #fafafa;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  caret-color: transparent;
+}
+
+.otp-boxes input:focus {
+  border-color: #4f7dac;
+  box-shadow: 0 0 0 3px rgba(79, 125, 172, 0.18);
+  background: #fff;
+}
+
+.otp-boxes input:not(:placeholder-shown) {
+  border-color: #1a1a2e;
+  background: #f0f4f9;
+}
+
+/* OTP error */
+.otp-error {
+  color: #ef4444 !important;
+  font-size: 0.8125rem !important;
+  margin-bottom: 0.75rem !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+/* Verify button */
+.verify-btn {
+  width: 100%;
+  padding: 0.875rem;
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  letter-spacing: 0.3px;
+  margin-bottom: 0.85rem;
+}
+
+.verify-btn:hover {
+  background: #4f7dac;
+  transform: translateY(-1px);
+}
+
+.verify-btn:active {
+  transform: translateY(0);
+}
+
+.verify-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Resend row */
+.resend {
+  font-size: 0.8375rem;
+  color: #6b7280;
+  margin-bottom: 0.75rem;
+}
+
+.resend p {
+  color: #9ca3af !important;
+  font-size: 0.8375rem !important;
+  margin: 0 !important;
+}
+
+/* Resend button */
+.resend button,
+.resend-btn {
+  background: none;
+  border: none;
+  color: #4f7dac;
+  font-size: 0.8375rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.resend button:hover,
+.resend-btn:hover {
+  color: #1a1a2e;
+  text-decoration: underline;
+}
+
+/* Cancel / close button */
+.close-btn {
+  background: none;
+  border: 1.5px solid #e5e7eb;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.65rem 1.5rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+  margin-top: 0.25rem;
+}
+
+.close-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+/* Timer badge */
+.otp-timer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f4f9;
+  border-radius: 20px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Attempt dots */
+.otp-attempts {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.otp-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  transition: background 0.2s;
+}
+
+.otp-dot--active {
+  background: #d1d5db;
+}
+
+.otp-dot--used {
+  background: #ef4444;
+}
+
+.otp-attempts-label {
+  font-size: 0.75rem !important;
+  color: #6b7280 !important;
+  margin-bottom: 0.25rem !important;
+}
+
+/* Step description */
+.otp-steps {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .otp-modal {
+    padding: 2rem 1.25rem;
+    border-radius: 20px;
+  }
+
+  .otp-boxes input {
+    width: 40px;
+    height: 48px;
+    font-size: 1.25rem;
+    border-radius: 10px;
+  }
+
+  .otp-boxes {
+    gap: 0.45rem;
+  }
+}

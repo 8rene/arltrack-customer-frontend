@@ -1,0 +1,451 @@
+import { useState } from "react";
+
+// ── Date formatter ────────────────────────────────────────────
+const fmtDT = (val) => {
+  if (!val) return "—";
+  if (val?.toDate) return val.toDate().toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  if (val?._seconds !== undefined) return new Date(val._seconds * 1000).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+};
+
+// ── Star renderer ─────────────────────────────────────────────
+const Stars = ({ rating, size = "text-sm" }) => (
+  <span className={size}>
+    {[1, 2, 3, 4, 5].map((s) => (
+      <span key={s} className={s <= rating ? "text-yellow-400" : "text-gray-200"}>★</span>
+    ))}
+  </span>
+);
+
+// ── 25 dummy reviews (5 per star) ─────────────────────────────
+const DUMMY_REVIEWS = (() => {
+  const names = [
+    "Maria Santos", "Juan dela Cruz", "Ana Reyes", "Carlo Mendoza", "Rose Tan",
+    "Mark Villanueva", "Jenny Lim", "Ryan Cruz", "Claire Ong", "Paolo Garcia",
+    "Nico Bautista", "Diana Flores", "Jess Aquino", "Tina Ramos", "Ben Torres",
+    "Kate Ferrer", "Luis Diaz", "Mia Castillo", "Ron dela Rosa", "Lea Gomez",
+    "Bong Navarro", "Iza Morales", "Eric Ocampo", "Jina Padilla", "Sam Corpus",
+  ];
+  const comments = {
+    5: [
+      "Excellent service! The car was spotless and very comfortable. Will definitely book again!",
+      "Amazing experience from start to finish. Highly recommend to everyone!",
+      "Super smooth ride, very well-maintained vehicle. 5 stars all the way!",
+      "Outstanding! The car exceeded my expectations. Great value for money.",
+      "Perfect trip! The vehicle was in top condition. Loved every minute.",
+    ],
+    4: [
+      "Really good car, comfortable and clean. Minor issue with the AC but overall great.",
+      "Enjoyed the ride, car was in good shape. Would book again next time.",
+      "Good experience, vehicle was as described. Pickup was quick and easy.",
+      "Smooth booking process and nice car. A few small scratches but nothing major.",
+      "Very satisfied with the service. Car was clean and well-maintained.",
+    ],
+    3: [
+      "Decent car, nothing special but it got the job done. Average experience.",
+      "Okay ride. The car was a bit older than expected but still functional.",
+      "Alright experience. Car was clean but the suspension felt a bit rough.",
+      "Service was okay. Car could use some freshening up but drivable.",
+      "Satisfactory. Did what we needed. Nothing extraordinary.",
+    ],
+    2: [
+      "Car had some issues with the air conditioning. Not fully satisfied.",
+      "Expected better for the price. Car was okay but a bit disappointing.",
+      "Some minor issues but manageable. Wouldn't rush to book again.",
+      "The car didn't look as good as in the photos. Some wear and tear visible.",
+      "Had a few hiccups but got through. Average at best.",
+    ],
+    1: [
+      "Not a great experience. Car had some mechanical issues during the trip.",
+      "Disappointing. The vehicle didn't match the description at all.",
+      "Would not recommend. Had too many problems with the car.",
+      "Very unsatisfied. Lots of issues and poor condition.",
+      "Expected much better. Car had problems from the start.",
+    ],
+  };
+  const reviews = [];
+  let nameIdx = 0;
+  [5, 4, 3, 2, 1].forEach((star) => {
+    comments[star].forEach((comment) => {
+      reviews.push({
+        reviewID: `dummy-${star}-${nameIdx}`,
+        userName: names[nameIdx % names.length],
+        rating: star,
+        comment,
+        createdAt: null,
+      });
+      nameIdx++;
+    });
+  });
+  return reviews;
+})();
+
+// ── Status config ─────────────────────────────────────────────
+const STATUS_CFG = {
+  pending:   { bg: "bg-yellow-100", text: "text-yellow-700", icon: "⏳" },
+  approved:  { bg: "bg-green-100",  text: "text-green-700",  icon: "✅" },
+  cancelled: { bg: "bg-red-100",    text: "text-red-600",    icon: "❌" },
+  completed: { bg: "bg-blue-100",   text: "text-blue-700",   icon: "🏁" },
+};
+
+// ── View Details Modal ────────────────────────────────────────
+const ViewDetailsModal = ({ car, onClose }) => {
+  const [tab, setTab]           = useState("reviews");
+  const [loading, setLoading]   = useState(true);
+  const [data, setData]         = useState(null);
+  const [filterStar, setFilterStar] = useState(0);
+
+  // Fetch on first render
+  const [fetched, setFetched] = useState(false);
+  if (!fetched) {
+    setFetched(true);
+    fetch(`http://localhost:5000/api/cars/${car.carID}/details`)
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((json) => { setData(json); setLoading(false); })
+      .catch(() => { setData({ error: true }); setLoading(false); });
+  }
+
+  const allReviews = (() => {
+    const real = data?.reviews || [];
+    const needed = Math.max(0, 25 - real.length);
+    return [...real, ...DUMMY_REVIEWS.slice(0, needed)];
+  })();
+
+  const filteredReviews = filterStar === 0
+    ? allReviews
+    : allReviews.filter((r) => r.rating === filterStar);
+
+  const starCounts = [5, 4, 3, 2, 1].map((s) => ({
+    star: s,
+    count: allReviews.filter((r) => r.rating === s).length,
+  }));
+  const avgRating = allReviews.length
+    ? (allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length).toFixed(1)
+    : "—";
+
+  const bookings = data?.bookings || [];
+  const latestBooking = bookings[0] || null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+
+        {/* Header */}
+        <div className="flex items-center gap-4 p-6 border-b border-gray-100">
+          <div className="w-20 h-16 rounded-2xl overflow-hidden bg-gray-100 flex-shrink-0">
+            {car.imageURL
+              ? <img src={car.imageURL} alt={car.name} className="w-full h-full object-cover" />
+              : <div className="w-full h-full flex items-center justify-center text-2xl text-gray-300">🚗</div>
+            }
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-black text-arl-primary truncate">{car.name}</h2>
+            <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">{car.bodyType}</p>
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
+              <span className="text-xs text-gray-500">⭐ {allReviews.length} reviews</span>
+              <span className="text-xs text-gray-500">📅 {data?.bookingCount ?? bookings.length} bookings</span>
+              {car.startingPrice && (
+                <span className="text-xs font-bold text-arl-cta">₱{Number(car.startingPrice).toLocaleString()} / {car.durationType}</span>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition flex-shrink-0 text-lg"
+          >✕</button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-100 px-6">
+          {[
+            { key: "reviews",  label: `Reviews (${allReviews.length})` },
+            { key: "bookings", label: `Bookings (${data?.bookingCount ?? bookings.length})` },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`py-3 px-4 text-sm font-bold border-b-2 transition -mb-px ${
+                tab === key
+                  ? "border-arl-cta text-arl-cta"
+                  : "border-transparent text-gray-400 hover:text-gray-600"
+              }`}
+            >{label}</button>
+          ))}
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto">
+
+          {loading && (
+            <div className="flex items-center justify-center py-16">
+              <div className="w-8 h-8 border-4 border-arl-secondary border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+
+          {!loading && data?.error && (
+            <p className="text-center text-red-400 py-12 text-sm">Failed to load details.</p>
+          )}
+
+          {/* REVIEWS */}
+          {!loading && !data?.error && tab === "reviews" && (
+            <div className="p-6">
+              <div className="flex items-center gap-6 mb-6 p-4 bg-gray-50 rounded-2xl">
+                <div className="text-center flex-shrink-0">
+                  <p className="text-5xl font-black text-arl-primary">{avgRating}</p>
+                  <Stars rating={Math.round(parseFloat(avgRating))} size="text-lg" />
+                  <p className="text-xs text-gray-400 mt-1">{allReviews.length} reviews</p>
+                </div>
+                <div className="flex-1 space-y-1.5">
+                  {starCounts.map(({ star, count }) => (
+                    <div key={star} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 w-4 text-right">{star}</span>
+                      <span className="text-yellow-400 text-xs">★</span>
+                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-yellow-400 rounded-full"
+                          style={{ width: allReviews.length ? `${(count / allReviews.length) * 100}%` : "0%" }}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-400 w-6">{count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Star filter */}
+              <div className="flex gap-2 flex-wrap mb-4">
+                <button
+                  onClick={() => setFilterStar(0)}
+                  className={`px-3 py-1 rounded-full text-xs font-bold border transition ${
+                    filterStar === 0 ? "bg-arl-primary text-white border-arl-primary" : "bg-white text-gray-600 border-gray-200 hover:border-arl-primary"
+                  }`}
+                >All</button>
+                {[5, 4, 3, 2, 1].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setFilterStar(filterStar === s ? 0 : s)}
+                    className={`px-3 py-1 rounded-full text-xs font-bold border transition flex items-center gap-1 ${
+                      filterStar === s ? "bg-yellow-400 text-white border-yellow-400" : "bg-white text-gray-600 border-gray-200 hover:border-yellow-300"
+                    }`}
+                  >
+                    {s} ★ <span className="opacity-60 font-normal">({starCounts.find(x => x.star === s)?.count || 0})</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-4">
+                {filteredReviews.length === 0 && (
+                  <p className="text-center text-gray-400 text-sm py-8">No reviews for this rating.</p>
+                )}
+                {filteredReviews.map((r) => (
+                  <div key={r.reviewID} className="border border-gray-100 rounded-2xl p-4 hover:bg-gray-50 transition">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-arl-secondary/20 flex items-center justify-center text-xs font-black text-arl-primary">
+                          {(r.userName || r.userID || "?")[0].toUpperCase()}
+                        </div>
+                        <span className="text-sm font-semibold text-gray-700">
+                          {r.userName || (r.userID ? `User ${r.userID.slice(0, 6)}` : "Anonymous")}
+                        </span>
+                      </div>
+                      <Stars rating={r.rating} />
+                    </div>
+                    {r.comment && (
+                      <p className="text-sm text-gray-600 mt-2 leading-relaxed pl-10">{r.comment}</p>
+                    )}
+                    {r.createdAt && (
+                      <p className="text-xs text-gray-400 mt-1 pl-10">{fmtDT(r.createdAt)}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* BOOKINGS */}
+          {!loading && !data?.error && tab === "bookings" && (
+            <div className="p-6">
+              {latestBooking ? (
+                <div className="mb-5">
+                  <p className="text-xs font-black text-arl-primary uppercase tracking-widest mb-3">Latest Booking</p>
+                  <div className="bg-arl-light rounded-2xl border border-arl-secondary/20 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="font-mono text-xs text-gray-500 truncate max-w-xs">{latestBooking.bookingID}</span>
+                      {(() => {
+                        const s = (latestBooking.status || "pending").toLowerCase();
+                        const cfg = STATUS_CFG[s] || STATUS_CFG.pending;
+                        return (
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${cfg.bg} ${cfg.text}`}>
+                            {cfg.icon} {s.charAt(0).toUpperCase() + s.slice(1)}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                      <div>
+                        <p className="text-gray-400 font-semibold uppercase tracking-wide">Start</p>
+                        <p className="text-gray-700">{fmtDT(latestBooking.startDateTime)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 font-semibold uppercase tracking-wide">End</p>
+                        <p className="text-gray-700">{fmtDT(latestBooking.endDateTime)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 font-semibold uppercase tracking-wide">Duration</p>
+                        <p className="text-gray-700">{latestBooking.totalDays} day(s)</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-400 font-semibold uppercase tracking-wide">Drive</p>
+                        <p className="text-gray-700">{latestBooking.modeOfDriving || "—"}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-gray-400 font-semibold uppercase tracking-wide">Booked On</p>
+                        <p className="text-gray-700">{fmtDT(latestBooking.createdAt)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 mb-4">
+                  <p className="text-4xl mb-3">📅</p>
+                  <p className="text-gray-400 text-sm font-medium">No bookings yet for this vehicle.</p>
+                </div>
+              )}
+
+              {bookings.length > 0 && (
+                <div>
+                  <p className="text-xs font-black text-arl-primary uppercase tracking-widest mb-3">
+                    All Bookings ({bookings.length})
+                  </p>
+                  <div className="space-y-2">
+                    {bookings.map((b, i) => {
+                      const s = (b.status || "pending").toLowerCase();
+                      const cfg = STATUS_CFG[s] || STATUS_CFG.pending;
+                      return (
+                        <div key={b.bookingID || i} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-mono text-xs text-gray-500 truncate">{b.bookingID}</p>
+                            <p className="text-xs text-gray-600 mt-0.5">
+                              {fmtDT(b.startDateTime)} → {fmtDT(b.endDateTime)}
+                            </p>
+                            {b.modeOfDriving && <p className="text-xs text-gray-400">{b.modeOfDriving}</p>}
+                          </div>
+                          <span className={`ml-3 px-2.5 py-1 rounded-full text-xs font-bold flex-shrink-0 ${cfg.bg} ${cfg.text}`}>
+                            {cfg.icon} {s.charAt(0).toUpperCase() + s.slice(1)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Main VehicleCard ──────────────────────────────────────────
+const VehicleCard = ({ car, badge }) => {
+  const [showModal, setShowModal] = useState(false);
+
+  const {
+    name            = "",
+    bodyType        = "",
+    seatingCapacity = 0,
+    fuelType        = "",
+    transmission    = "",
+    shortDescription = "",
+    imageURL        = "",
+    startingPrice   = null,
+    durationType    = null,
+    reviewCount     = 0,
+    bookingCount    = 0,
+  } = car;
+
+  const tags = [
+    bodyType,
+    seatingCapacity ? `${seatingCapacity} Seater` : "",
+    fuelType,
+    transmission,
+  ].filter(Boolean);
+
+  return (
+    <>
+      {showModal && (
+        <ViewDetailsModal car={car} onClose={() => setShowModal(false)} />
+      )}
+
+      <div className="group relative overflow-hidden rounded-3xl border border-white/20 bg-white/80 backdrop-blur-xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2">
+
+        <div className="absolute inset-0 bg-gradient-to-br from-arl-secondary/10 via-transparent to-arl-primary/10 opacity-0 group-hover:opacity-100 transition duration-500 pointer-events-none" />
+
+        {badge && (
+          <div className="absolute top-3 left-3 z-10 px-3 py-1 rounded-full text-xs font-bold bg-arl-cta text-white shadow-md">
+            {badge}
+          </div>
+        )}
+
+        <div className="relative overflow-hidden rounded-t-3xl bg-gray-100">
+          {imageURL ? (
+            <img
+              src={imageURL}
+              alt={name}
+              className="w-full h-52 object-cover transition-transform duration-700 group-hover:scale-110"
+              onError={(e) => { e.target.style.display = "none"; }}
+            />
+          ) : (
+            <div className="w-full h-52 flex items-center justify-center bg-gray-100 text-gray-300 text-4xl">🚗</div>
+          )}
+        </div>
+
+        <div className="relative p-5">
+          <h3 className="text-xl font-bold text-arl-primary tracking-tight mb-3">{name}</h3>
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            {tags.map((tag, i) => (
+              <span key={i} className="px-3 py-1 text-xs font-medium rounded-full bg-arl-secondary/10 text-arl-primary border border-arl-secondary/20">
+                {tag}
+              </span>
+            ))}
+          </div>
+
+          {shortDescription && (
+            <p className="text-sm text-gray-600 leading-relaxed mb-3">{shortDescription}</p>
+          )}
+
+          <div className="flex items-center justify-between text-xs text-gray-400 mb-4">
+            {reviewCount > 0 && (
+              <span className="flex items-center gap-1">⭐ {reviewCount} review{reviewCount !== 1 ? "s" : ""}</span>
+            )}
+            {bookingCount > 0 && (
+              <span className="flex items-center gap-1">📅 {bookingCount} booking{bookingCount !== 1 ? "s" : ""}</span>
+            )}
+          </div>
+
+          {startingPrice !== null && (
+            <p className="text-sm font-semibold text-arl-cta mb-4">
+              Starts at ₱{startingPrice.toLocaleString()}{durationType ? ` / ${durationType}` : ""}
+            </p>
+          )}
+
+          <button
+            onClick={() => setShowModal(true)}
+            className="w-full rounded-xl bg-arl-secondary hover:bg-arl-primary text-white py-2.5 font-medium shadow-lg hover:shadow-2xl transition"
+          >
+            View Details
+          </button>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default VehicleCard;

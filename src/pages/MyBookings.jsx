@@ -1,0 +1,426 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
+// ── Status config ─────────────────────────────────────────────
+const STATUS_CONFIG = {
+  pending:   { label: "Pending",   bg: "bg-yellow-100", text: "text-yellow-700", border: "border-yellow-300", icon: "⏳" },
+  approved:  { label: "Approved",  bg: "bg-green-100",  text: "text-green-700",  border: "border-green-300",  icon: "✅" },
+  cancelled: { label: "Cancelled", bg: "bg-red-100",    text: "text-red-600",    border: "border-red-300",    icon: "❌" },
+  completed: { label: "Completed", bg: "bg-blue-100",   text: "text-blue-700",   border: "border-blue-300",   icon: "🏁" },
+};
+
+const StatusBadge = ({ status }) => {
+  const s   = (status || "pending").toLowerCase();
+  const cfg = STATUS_CONFIG[s] || STATUS_CONFIG.pending;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+      {cfg.icon} {cfg.label}
+    </span>
+  );
+};
+
+// ── Date formatter — handles Firestore Timestamps, JS Dates, ISO strings ──
+const fmtDT = (val) => {
+  if (!val) return "—";
+  if (val?.toDate) return val.toDate().toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  if (val?._seconds !== undefined) return new Date(val._seconds * 1000).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  const d = new Date(val);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+};
+
+const peso = (v) => `₱${Number(v || 0).toLocaleString()}`;
+
+// ── Skeleton ──────────────────────────────────────────────────
+const Skeleton = () => (
+  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden animate-pulse">
+    <div className="flex gap-4 p-5">
+      <div className="w-28 h-20 bg-gray-200 rounded-xl flex-shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-4 bg-gray-200 rounded w-1/3" />
+        <div className="h-3 bg-gray-100 rounded w-1/2" />
+        <div className="h-3 bg-gray-100 rounded w-2/3" />
+      </div>
+    </div>
+  </div>
+);
+
+// ── Detail row ────────────────────────────────────────────────
+const DR = ({ label, value, mono = false }) =>
+  value ? (
+    <div>
+      <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">{label}</p>
+      <p className={`text-sm text-gray-700 font-medium break-all ${mono ? "font-mono" : ""}`}>{value}</p>
+    </div>
+  ) : null;
+
+// ── Cancel modal ──────────────────────────────────────────────
+const CancelModal = ({ booking, onConfirm, onClose, loading }) => {
+  const [reason, setReason] = useState("");
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+        <h3 className="text-lg font-black text-gray-800 mb-1">Cancel Booking</h3>
+        <p className="text-sm text-gray-500 mb-4">
+          Are you sure you want to cancel booking <span className="font-mono font-bold text-arl-primary">{booking.bookingID}</span>?
+        </p>
+        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+          Reason (optional)
+        </label>
+        <textarea
+          className="w-full border border-gray-200 rounded-xl p-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-arl-primary/30"
+          rows={3}
+          placeholder="E.g. Change of plans..."
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
+        <div className="flex gap-3 mt-4">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 transition">
+            Keep Booking
+          </button>
+          <button
+            onClick={() => onConfirm(reason)}
+            disabled={loading}
+            className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition disabled:opacity-60">
+            {loading ? "Cancelling…" : "Yes, Cancel"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Booking card ──────────────────────────────────────────────
+const BookingCard = ({ booking, user, onCancelled }) => {
+  const navigate = useNavigate();
+  const [expanded,        setExpanded]        = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelling,      setCancelling]      = useState(false);
+  const [cancelError,     setCancelError]     = useState("");
+
+  const {
+    bookingID, carName, carImage, carBodyType,
+    serviceType, duration, startDateTime, endDateTime,
+    totalDays, totalFee,
+    status, cancellationReason,
+    modeOfDriving, destination, passengerName, createdAt,
+    payment, carID,
+  } = booking;
+
+  const p = payment || {};
+
+  const handleCancel = async (reason) => {
+    setCancelling(true);
+    setCancelError("");
+    try {
+      const token = localStorage.getItem("arl_token");
+      const res   = await fetch(`http://localhost:5000/api/bookings/${bookingID}/cancel`, {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ userID: user.userID, reason: reason || "Cancelled by user." }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Cancel failed.");
+      }
+      setShowCancelModal(false);
+      onCancelled(bookingID, reason || "Cancelled by user.");
+    } catch (err) {
+      setCancelError(err.message);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const handleRebook = () => {
+    navigate(`/booking${carID ? `?carID=${carID}` : ""}`);
+  };
+
+  return (
+    <>
+      {showCancelModal && (
+        <CancelModal
+          booking={booking}
+          onConfirm={handleCancel}
+          onClose={() => { setShowCancelModal(false); setCancelError(""); }}
+          loading={cancelling}
+        />
+      )}
+
+      <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 ${
+        status === "cancelled" ? "border-red-100" : status === "completed" ? "border-blue-100" : "border-gray-100"
+      }`}>
+
+        {/* ── Main row ── */}
+        <div className="flex gap-4 p-5">
+          {/* Car image */}
+          <div className="flex-shrink-0 w-28 h-20 rounded-xl overflow-hidden bg-gray-100">
+            {carImage
+              ? <img src={carImage} alt={carName} className="w-full h-full object-cover"
+                  onError={(e) => { e.target.style.display = "none"; e.target.nextSibling.style.display = "flex"; }} />
+              : null}
+            <div className="w-full h-full items-center justify-center text-3xl text-gray-300"
+              style={{ display: carImage ? "none" : "flex" }}>🚗</div>
+          </div>
+
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2 flex-wrap mb-1">
+              <div>
+                <h4 className="font-black text-arl-primary text-lg leading-tight">{carName}</h4>
+                {carBodyType && <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">{carBodyType}</p>}
+              </div>
+              <StatusBadge status={status} />
+            </div>
+
+            <div className="space-y-0.5 mb-2">
+              <p className="text-xs text-gray-500">
+                <span className="font-semibold text-gray-600">Service:</span> {serviceType || "—"}
+              </p>
+              <p className="text-xs text-gray-500">
+                <span className="font-semibold text-gray-600">Start:</span> {fmtDT(startDateTime)}
+              </p>
+              <p className="text-xs text-gray-500">
+                <span className="font-semibold text-gray-600">End:</span> {fmtDT(endDateTime)}
+              </p>
+              <p className="text-xs text-gray-400">
+                <span className="font-semibold text-gray-500">Booked on:</span> {fmtDT(createdAt)}
+              </p>
+              {cancellationReason && (
+                <p className="text-xs text-red-500 font-medium mt-1">
+                  Reason: {cancellationReason}
+                </p>
+              )}
+            </div>
+
+            {cancelError && (
+              <p className="text-xs text-red-500 mb-2">⛔ {cancelError}</p>
+            )}
+
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-3">
+                <span className="text-xl font-black text-arl-cta">{peso(p.amount || totalFee)}</span>
+                <span className="text-xs text-gray-400">{totalDays} day(s)</span>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Cancel — for pending and approved */}
+                {(status === "pending" || status === "approved") && (
+                  <button
+                    onClick={() => setShowCancelModal(true)}
+                    className="text-xs font-bold text-red-500 border border-red-200 hover:bg-red-50 px-3 py-1.5 rounded-lg transition">
+                    ✕ Cancel
+                  </button>
+                )}
+
+                {/* Rebook — for cancelled and completed */}
+                {(status === "cancelled" || status === "completed") && (
+                  <button
+                    onClick={handleRebook}
+                    className="text-xs font-bold text-arl-secondary border border-arl-secondary/30 hover:bg-arl-secondary/10 px-3 py-1.5 rounded-lg transition">
+                    🔁 Rebook
+                  </button>
+                )}
+
+                <button onClick={() => setExpanded(!expanded)}
+                  className="text-xs font-bold text-arl-secondary hover:text-arl-primary transition flex items-center gap-1">
+                  {expanded ? "Hide details ▲" : "View details ▼"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Expanded details ── */}
+        {expanded && (
+          <div className="border-t border-gray-100">
+            <div className="px-5 py-4 bg-gray-50">
+              <p className="text-xs font-black text-arl-primary uppercase tracking-widest mb-3">🚗 Booking Details</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
+                <DR label="Booking ID"  value={bookingID} mono />
+                <DR label="Booked On"   value={fmtDT(createdAt)} />
+                <DR label="Start"       value={fmtDT(startDateTime)} />
+                <DR label="End"         value={fmtDT(endDateTime)} />
+                <DR label="Duration"    value={duration ? `${duration}/day` : null} />
+                <DR label="Days"        value={`${totalDays} day(s)`} />
+                <DR label="Mode"        value={modeOfDriving} />
+                <DR label="Destination" value={destination} />
+                <DR label="Passenger"   value={passengerName} />
+                <DR label="Service"     value={serviceType} />
+              </div>
+            </div>
+
+            {payment ? (
+              <div className="px-5 py-4 bg-blue-50/50 border-t border-blue-100">
+                <p className="text-xs font-black text-arl-primary uppercase tracking-widest mb-3">💳 Payment Details</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 mb-4">
+                  <DR label="Payment ID"        value={p.paymentID} mono />
+                  <DR label="Total Amount"      value={peso(p.amount)} />
+                  <DR label="Deposit Paid"      value={peso(p.depositFee)} />
+                  <DR label="Rental Fee"        value={peso(p.rentalFee)} />
+                  <DR label="Service Fee"       value={peso(p.serviceFee)} />
+                  <DR label="Gateway Fee"       value={peso(p.gatewayFee)} />
+                  <DR label="Extra Fee"         value={peso(p.extraFee)} />
+                  <DR label="Drivers Fee"       value={p.driversFee ? peso(p.driversFee) : null} />
+                  <DR label="Balance on Pickup" value={peso(Math.max(0, (p.amount || 0) - (p.depositFee || 0)))} />
+                  <DR label="Payment Method"    value={p.methodOfPayment || p.paymentMethod} />
+                  <DR label="Reference No."     value={p.referenceNumber} mono />
+                  <DR label="Payment Status"    value={p.status} />
+                </div>
+                {p.proofUrl && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Proof of Payment</p>
+                    <img src={p.proofUrl} alt="Payment proof"
+                      className="max-h-48 w-auto rounded-xl border border-gray-200 object-contain bg-white"
+                      onError={(e) => { e.target.style.display = "none"; }}
+                    />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="px-5 py-4 bg-gray-50 border-t border-gray-100">
+                <p className="text-xs text-gray-400">No payment record found for this booking.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
+
+// ── Empty state ───────────────────────────────────────────────
+const EmptyState = ({ tab }) => (
+  <div className="text-center py-20">
+    <p className="text-5xl mb-4">{tab === "upcoming" ? "📅" : "📦"}</p>
+    <p className="text-gray-500 font-bold text-lg">
+      {tab === "upcoming" ? "No upcoming bookings" : "No booking history yet"}
+    </p>
+    <p className="text-gray-400 text-sm mt-1">
+      {tab === "upcoming"
+        ? "Book a ride to see it here."
+        : "Your completed and cancelled bookings will appear here."}
+    </p>
+  </div>
+);
+
+// ══════════════════════════════════════════════════════════════
+const MyBookings = ({ user }) => {
+  const navigate   = useNavigate();
+  const [bookings,  setBookings]  = useState([]);
+  const [loading,   setLoading]   = useState(true);
+  const [error,     setError]     = useState("");
+  const [activeTab, setActiveTab] = useState("upcoming");
+
+  useEffect(() => {
+    if (!user?.userID) { navigate("/"); return; }
+    fetchBookings();
+  }, [user]);
+
+  const fetchBookings = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const token = localStorage.getItem("arl_token");
+      const res   = await fetch(`http://localhost:5000/api/bookings/user/${user.userID}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch bookings.");
+      const data = await res.json();
+      setBookings(data);
+    } catch (err) {
+      setError("Could not load bookings. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Optimistically update cancelled booking in local state
+  const handleCancelled = (bookingID, reason) => {
+    setBookings((prev) =>
+      prev.map((b) =>
+        b.bookingID === bookingID
+          ? { ...b, status: "cancelled", cancellationReason: reason }
+          : b
+      )
+    );
+  };
+
+  const upcoming  = bookings.filter(b => ["pending", "approved"].includes(b.status));
+  const history   = bookings.filter(b => ["cancelled", "completed"].includes(b.status));
+  const displayed = activeTab === "upcoming" ? upcoming : history;
+
+  return (
+    <div className="min-h-screen bg-gray-50 pt-24 pb-16">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+
+        <div className="mb-8">
+          <h1 className="text-3xl font-black text-arl-primary tracking-tight">My Bookings</h1>
+          <p className="text-gray-500 text-sm mt-1">Track all your rides and payment details</p>
+        </div>
+
+        <div className="flex bg-white rounded-2xl border border-gray-100 shadow-sm p-1.5 mb-6 gap-1">
+          {[
+            { key: "upcoming", label: "Upcoming", count: upcoming.length, icon: "📅" },
+            { key: "history",  label: "History",  count: history.length,  icon: "📦" },
+          ].map(({ key, label, count, icon }) => (
+            <button key={key} onClick={() => setActiveTab(key)}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${
+                activeTab === key ? "bg-arl-primary text-white shadow" : "text-gray-500 hover:text-arl-primary hover:bg-gray-50"
+              }`}>
+              <span>{icon}</span>
+              <span>{label}</span>
+              <span className={`px-2 py-0.5 rounded-full text-xs font-black ${
+                activeTab === key ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"
+              }`}>
+                {loading ? "…" : count}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <p className="text-xs text-gray-400 mb-4 px-1">
+          {activeTab === "upcoming"
+            ? "Pending & Approved — You can cancel bookings before they start."
+            : "Cancelled & Completed — Use Rebook to book the same car again."}
+        </p>
+
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+            ⛔ {error}
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {loading
+            ? Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} />)
+            : displayed.length > 0
+            ? displayed.map(b => (
+                <BookingCard
+                  key={b.bookingID}
+                  booking={b}
+                  user={user}
+                  onCancelled={handleCancelled}
+                />
+              ))
+            : <EmptyState tab={activeTab} />
+          }
+        </div>
+
+        {!loading && (
+          <div className="text-center mt-8">
+            <button onClick={fetchBookings}
+              className="text-sm text-arl-secondary hover:text-arl-primary font-semibold transition">
+              🔄 Refresh
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default MyBookings;
