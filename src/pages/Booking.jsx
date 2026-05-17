@@ -401,7 +401,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
   };
 
   const handleDayClick = (date) => {
-    const key    = date.toISOString().split('T')[0];
+    const key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
     const status = dateStatuses[key] || 'available';
     if (BLOCKED_STATUSES.has(status) || date < today) return;
     setCodingError("");
