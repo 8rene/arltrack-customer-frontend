@@ -51,7 +51,7 @@ function App() {
     // Fetch full user details from Firestore
     try {
       const token = localStorage.getItem("arl_token");
-      const res   = await fetch(`http://localhost:5000/api/user/details/${loginData.userID}`, {
+      const res   = await fetch(`${process.env.REACT_APP_API_URL}/user/details/${loginData.userID}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {

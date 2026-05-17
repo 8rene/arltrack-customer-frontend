@@ -117,7 +117,7 @@ const BookingCard = ({ booking, user, onCancelled }) => {
     setCancelError("");
     try {
       const token = localStorage.getItem("arl_token");
-      const res   = await fetch(`http://localhost:5000/api/bookings/${bookingID}/cancel`, {
+      const res   = await fetch(`${process.env.REACT_APP_API_URL}/bookings/${bookingID}/cancel`, {
         method:  "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body:    JSON.stringify({ userID: user.userID, reason: reason || "Cancelled by user." }),
@@ -325,7 +325,7 @@ const MyBookings = ({ user }) => {
     setError("");
     try {
       const token = localStorage.getItem("arl_token");
-      const res   = await fetch(`http://localhost:5000/api/bookings/user/${user.userID}`, {
+      const res   = await fetch(`${process.env.REACT_APP_API_URL}/bookings/user/${user.userID}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to fetch bookings.");

@@ -271,7 +271,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
 
   // ── Fetch cars ───────────────────────────────────────────────
   useEffect(() => {
-    fetch('http://localhost:5000/api/cars/all')
+    fetch('${process.env.REACT_APP_API_URL}/cars/all')
       .then(r => r.json()).then(d => { setCars(d); setCarsLoading(false); })
       .catch(() => { setCarsError('Could not load vehicles.'); setCarsLoading(false); });
   }, []);
@@ -283,7 +283,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
 
   // ── Fetch service types ──────────────────────────────────────
   useEffect(() => {
-    fetch('http://localhost:5000/api/services/types')
+    fetch('${process.env.REACT_APP_API_URL}/services/types')
       .then(r => r.json()).then(d => { setServiceTypes(d); setServiceTypesLoading(false); })
       .catch(() => setServiceTypesLoading(false));
   }, []);
@@ -306,7 +306,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
       setStartDate(''); setStartTime(''); setEndDate(''); setEndTime('');
     }
     try {
-      const res  = await fetch(`http://localhost:5000/api/services/car-bookings/${car.carID}`);
+      const res  = await fetch(`${process.env.REACT_APP_API_URL}/services/car-bookings/${car.carID}`);
       const data = await res.json();
       setCarBookings(data);
       setDateStatuses(getDateStatuses(data));
@@ -571,7 +571,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
     try {
       const startDT = new Date(`${startDate}T${startTime}:00`);
       const endDT   = endDate && endTime ? new Date(`${endDate}T${endTime}:00`) : null;
-      const res = await fetch("http://localhost:5000/api/bookings/check-coding", {
+      const res = await fetch("${process.env.REACT_APP_API_URL}/bookings/check-coding", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("arl_token")}` },
         body: JSON.stringify({
@@ -641,7 +641,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
         });
       }
 
-      const response = await fetch("http://localhost:5000/api/bookings/create", {
+      const response = await fetch("${process.env.REACT_APP_API_URL}/bookings/create", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("arl_token")}` },
         body: JSON.stringify({
@@ -1055,7 +1055,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
                           // Also save to DB if logged in
                           if (user?.userID && (firstName || lastName)) {
                             const token = localStorage.getItem("arl_token");
-                            fetch(`http://localhost:5000/api/user/details/${user.userID}`, {
+                            fetch(`${process.env.REACT_APP_API_URL}/user/details/${user.userID}`, {
                               method: "PUT",
                               headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
                               body: JSON.stringify({ firstName, lastName }),

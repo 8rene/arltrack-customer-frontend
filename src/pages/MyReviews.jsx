@@ -48,8 +48,8 @@ const ReviewModal = ({ booking, existingReview, userID, onClose, onSaved }) => {
       const token = localStorage.getItem("arl_token");
       const method = existingReview ? "PUT" : "POST";
       const url    = existingReview
-        ? `http://localhost:5000/api/reviews/${existingReview.reviewID}`
-        : `http://localhost:5000/api/reviews/create`;
+        ? `${process.env.REACT_APP_API_URL}/reviews/${existingReview.reviewID}`
+        : `${process.env.REACT_APP_API_URL}/reviews/create`;
 
       const res = await fetch(url, {
         method,
@@ -239,7 +239,7 @@ const MyReviews = ({ user }) => {
       const token = localStorage.getItem("arl_token");
 
       // 1. Get user's bookings
-      const bRes = await fetch(`http://localhost:5000/api/bookings/user/${user.userID}`, {
+      const bRes = await fetch(`${process.env.REACT_APP_API_URL}/bookings/user/${user.userID}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!bRes.ok) throw new Error("Failed to fetch bookings.");
@@ -249,7 +249,7 @@ const MyReviews = ({ user }) => {
       // 2. Get user's reviews — try endpoint, fallback gracefully
       let reviewsByBooking = {};
       try {
-        const rRes = await fetch(`http://localhost:5000/api/reviews/user/${user.userID}`, {
+        const rRes = await fetch(`${process.env.REACT_APP_API_URL}/reviews/user/${user.userID}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (rRes.ok) {

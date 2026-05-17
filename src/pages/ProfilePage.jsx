@@ -152,8 +152,8 @@ const ReviewModal = ({ booking, existingReview, userID, onClose, onSaved }) => {
       const token  = localStorage.getItem("arl_token");
       const method = existingReview ? "PUT" : "POST";
       const url    = existingReview
-        ? `http://localhost:5000/api/reviews/${existingReview.reviewID}`
-        : `http://localhost:5000/api/reviews/create`;
+        ? `${process.env.REACT_APP_API_URL}/reviews/${existingReview.reviewID}`
+        : `${process.env.REACT_APP_API_URL}/reviews/create`;
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -262,7 +262,7 @@ const BookingReviewCard = ({ booking, userID, onReviewSaved, onCancelled }) => {
     setCancelling(true); setCancelError("");
     try {
       const token = localStorage.getItem("arl_token");
-      const res   = await fetch(`http://localhost:5000/api/bookings/${booking.bookingID}/cancel`, {
+      const res   = await fetch(`${process.env.REACT_APP_API_URL}/bookings/${booking.bookingID}/cancel`, {
         method:  "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body:    JSON.stringify({ userID, reason: reason || "Cancelled by user." }),
@@ -366,7 +366,7 @@ const ReviewsTab = ({ user, navigate }) => {
     setLoading(true); setError("");
     try {
       const token = localStorage.getItem("arl_token");
-      const bRes  = await fetch(`http://localhost:5000/api/bookings/user/${user.userID}`, {
+      const bRes  = await fetch(`${process.env.REACT_APP_API_URL}/bookings/user/${user.userID}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!bRes.ok) throw new Error();
@@ -374,7 +374,7 @@ const ReviewsTab = ({ user, navigate }) => {
       const allBookings = Array.isArray(bData) ? bData : (bData.bookings || []);
       let reviewsByBooking = {};
       try {
-        const rRes = await fetch(`http://localhost:5000/api/reviews/user/${user.userID}`, {
+        const rRes = await fetch(`${process.env.REACT_APP_API_URL}/reviews/user/${user.userID}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (rRes.ok) {
@@ -535,7 +535,7 @@ const ProfilePage = ({ user }) => {
     setLoading(true); setError("");
     try {
       const token = localStorage.getItem("arl_token");
-      const res   = await fetch(`http://localhost:5000/api/user/profile/${user.userID}`, {
+      const res   = await fetch(`${process.env.REACT_APP_API_URL}/user/profile/${user.userID}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error();
@@ -571,7 +571,7 @@ const ProfilePage = ({ user }) => {
     const token = localStorage.getItem("arl_token");
     const body  = { [field]: value };
     if (ADDRESS_FIELDS.has(field) && userAddressID) body.userAddressID = userAddressID;
-    const res = await fetch(`http://localhost:5000/api/user/profile/${user.userID}`, {
+    const res = await fetch(`${process.env.REACT_APP_API_URL}/user/profile/${user.userID}`, {
       method:  "PUT",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body:    JSON.stringify(body),
@@ -597,7 +597,7 @@ const ProfilePage = ({ user }) => {
       const formData = new FormData();
       formData.append("profileImage", file);
       formData.append("userID", user.userID);
-      const res = await fetch(`http://localhost:5000/api/user/profile/${user.userID}/avatar`, {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/user/profile/${user.userID}/avatar`, {
         method:  "POST",
         headers: { Authorization: `Bearer ${token}` },
         body:    formData,

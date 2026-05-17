@@ -29,7 +29,7 @@ import TandC from "../shared/TandC";
 
 // ── No client-side Firebase writes needed — backend handles everything ────────
 
-const API = "http://localhost:5000/api";
+const API = "${process.env.REACT_APP_API_URL}";
 
 // ═══════════════════════════════ Helpers ══════════════════════════════════════
 

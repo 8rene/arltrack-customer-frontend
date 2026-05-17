@@ -101,7 +101,7 @@ const ViewDetailsModal = ({ car, onClose }) => {
   const [fetched, setFetched] = useState(false);
   if (!fetched) {
     setFetched(true);
-    fetch(`http://localhost:5000/api/cars/${car.carID}/details`)
+    fetch(`${process.env.REACT_APP_API_URL}/cars/${car.carID}/details`)
       .then((r) => r.ok ? r.json() : Promise.reject())
       .then((json) => { setData(json); setLoading(false); })
       .catch(() => { setData({ error: true }); setLoading(false); });

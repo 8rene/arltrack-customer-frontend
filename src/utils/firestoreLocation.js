@@ -2,7 +2,7 @@
 // Replaces the hardcoded luzonData.js — all data comes from Firestore
 // via the backend API at /api/location/*
 
-const BASE_URL = "http://localhost:5000/api/location";
+const BASE_URL = "${process.env.REACT_APP_API_URL}/location";
 
 // ── Simple in-memory cache so repeated renders don't re-fetch ──
 const cache = {};
