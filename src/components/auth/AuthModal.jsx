@@ -100,7 +100,7 @@ const AuthModal = ({ onClose, onLogin, initialView = "login" }) => {
 
     const handleVerifySignupOTP = async () => {
         try {
-            const response = await fetch("${process.env.REACT_APP_API_URL}/signup", {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/signup", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: signupEmail, password: signupPassword, phone }),
