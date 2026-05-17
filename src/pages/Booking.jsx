@@ -571,7 +571,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
     try {
       const startDT = new Date(`${startDate}T${startTime}:00`);
       const endDT   = endDate && endTime ? new Date(`${endDate}T${endTime}:00`) : null;
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/bookings/check-coding", {
+      const res = await fetch("${process.env.REACT_APP_API_URL}/bookings/check-coding", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("arl_token")}` },
         body: JSON.stringify({
@@ -641,7 +641,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
         });
       }
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/bookings/create", {
+      const response = await fetch("${process.env.REACT_APP_API_URL}/bookings/create", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("arl_token")}` },
         body: JSON.stringify({
