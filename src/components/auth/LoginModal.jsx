@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import "../../styles/loginModal.css";
 import { auth }                        from "../../firebase";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup, signOut } from "firebase/auth";
 
 const LoginModal = ({ onLogin, onClose, onSwitchToSignUp }) => {
-  const [email,        setEmail]        = useState("");
-  const [password,     setPassword]     = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [remember,     setRemember]     = useState(false);
-  const [error,        setError]        = useState("");
-  const [loading,      setLoading]      = useState(false);
+  const [email,         setEmail]        = useState("");
+  const [password,      setPassword]     = useState("");
+  const [showPassword,  setShowPassword] = useState(false);
+  const [remember,      setRemember]     = useState(false);
+  const [error,         setError]        = useState("");
+  const [loading,       setLoading]      = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   const emailRef    = useRef(null);
@@ -87,6 +87,8 @@ const LoginModal = ({ onLogin, onClose, onSwitchToSignUp }) => {
       const data = await response.json();
 
       if (!response.ok) {
+        // Sign out from Firebase so provider doesn't get linked to the account
+        await signOut(auth);
         setError(data.message || "Google login failed. Please try again.");
         return;
       }
@@ -101,6 +103,8 @@ const LoginModal = ({ onLogin, onClose, onSwitchToSignUp }) => {
       if (err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request") {
         return;
       }
+      // Sign out on unexpected errors too
+      await signOut(auth).catch(() => {});
       console.error("Google login error:", err);
       setError("Google login failed. Please try again.");
     } finally {
