@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { MapPin, Share2, Phone, Mail } from "lucide-react";
 
 export default function Footer() {
@@ -60,9 +61,9 @@ export default function Footer() {
                         </h4>
 
                         <div className="flex flex-col gap-3 text-sm">
-                            <a href="#" className="text-gray-400 hover:text-white transition">
+                            <Link to="/terms" className="text-gray-400 hover:text-white transition">
                                 Terms and Conditions
-                            </a>
+                            </Link>
 
                             <a href="#" className="text-gray-400 hover:text-white transition">
                                 Privacy Policy
