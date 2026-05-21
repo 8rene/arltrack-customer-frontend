@@ -1,0 +1,205 @@
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import Footer from "../components/layout/Footer";
+
+const SECTIONS = [
+  {
+    num: "01",
+    title: "Acceptance of Agreement",
+    body: "By renting a vehicle from ARL Car Rental, the renter agrees to comply with all terms, policies, and conditions stated in this agreement. These conditions are established to ensure the proper use of rental vehicles and to protect both the renter and the business.",
+  },
+  {
+    num: "02",
+    title: "Reservation & Booking Policy",
+    body: "ARL Car Rental follows a first-come, first-served reservation policy. Reservations are only confirmed once the required deposit or downpayment has been received. A minimum deposit of ₱1,000 is required to reserve a vehicle and secure the requested rental date. Pencil bookings or temporary reservations without deposit are not accepted.",
+  },
+  {
+    num: "03",
+    title: "Rental Inquiries and Approval",
+    body: "Customers may send rental inquiries through the official communication channels of ARL Car Rental. Upon receiving an inquiry, the supervisor verifies the requested rental date, vehicle type, rental duration, and type of service (self-drive or with driver) before approving the booking.",
+  },
+  {
+    num: "04",
+    title: "Payment Terms",
+    highlight: "5% service fee · 5% online payment gateway fee",
+    body: "After reservation approval, the renter must settle the remaining rental balance. Full payment must be completed before the vehicle is released. ARL Car Rental offers promotional discounts for rentals of 5 days or more (5% off) and for two or more vehicles in a single transaction (10% off). Discounts for PWD, Senior Citizen, or other identification cards are not applicable.",
+  },
+  {
+    num: "05",
+    title: "Cancellation & Refund Policy",
+    body: "Renters who wish to cancel must notify ARL Car Rental through official channels as early as possible.",
+    list: [
+      { label: "48 hours or more before pickup", value: "Full ₱1,000 refund" },
+      { label: "Less than 48 hours before pickup", value: "Non-refundable" },
+      { label: "No-show on pickup date", value: "Deposit forfeited in full" },
+    ],
+    footer: "Rescheduling is allowed with at least 24 hours' notice, subject to vehicle availability. The ₱1,000 deposit may be applied to the rescheduled booking at management's discretion.",
+  },
+  {
+    num: "06",
+    title: "Vehicle Pickup & Customer Identification",
+    body: "On the scheduled pickup date, the renter is required to present a valid government-issued identification card to verify identity, confirm booking details, and serve as a security measure. Failure to provide valid identification may result in cancellation without refund of the deposit.",
+  },
+  {
+    num: "07",
+    title: "Driver Requirements (Self-Drive Rentals)",
+    list: [
+      { label: "Minimum age", value: "21 years old" },
+      { label: "License required", value: "Valid Philippine driver's license" },
+      { label: "Primary driver", value: "Only the registered renter may drive" },
+      { label: "Unauthorized drivers", value: "Strictly prohibited" },
+    ],
+  },
+  {
+    num: "08",
+    title: "Vehicle Usage & Rental Period",
+    body: "The renter agrees to use the vehicle only within the agreed rental period and for lawful purposes. Strictly prohibited: subletting or transferring the vehicle, illegal transport, off-road use (unless authorized in writing), smoking inside the vehicle, and transporting hazardous or prohibited materials. The vehicle must be returned to ARL Car Rental once the rental agreement has ended.",
+  },
+  {
+    num: "09",
+    title: "Security Deposit",
+    body: "In addition to the reservation deposit, ARL Car Rental may require a separate security deposit prior to vehicle release. The amount depends on the vehicle type and rental duration. It will be refunded in full upon return of the vehicle in satisfactory condition, free of damage, and with no outstanding charges.",
+  },
+  {
+    num: "10",
+    title: "Accidents & Incidents",
+    body: "In the event of an accident or road incident during the rental period, the renter must: immediately stop the vehicle and ensure the safety of all parties; contact ARL Car Rental as soon as possible; file a report with the nearest PNP station and obtain a copy; and not admit fault or make settlements with third parties without prior written consent from ARL Car Rental.",
+  },
+  {
+    num: "11",
+    title: "Damages & Repair Liability",
+    body: "The renter is responsible for any damages that occur during the rental period, whether caused by accident, negligence, or misuse. Charges may apply for major or minor vehicle damages, repair or replacement costs, and administrative fees. ARL Car Rental's assessment of damages shall be final and binding.",
+  },
+  {
+    num: "12",
+    title: "Fuel Policy",
+    body: "ARL Car Rental operates on an unlimited mileage basis. However, fuel and toll fees are the full responsibility of the renter. Vehicles must be returned with the same fuel level as when released. If returned with less fuel, the renter will be charged for the difference at current pump prices plus an administrative handling fee.",
+  },
+  {
+    num: "13",
+    title: "Late Return & Penalties",
+    highlight: "₱100.00 per hour beyond the agreed return time",
+    body: "Vehicles must be returned on the agreed date and time. If the vehicle is not returned within 12 hours of the agreed return time without prior communication, ARL Car Rental reserves the right to treat the unit as unreturned and pursue appropriate legal action. Extensions must be confirmed in advance.",
+  },
+  {
+    num: "14",
+    title: "Number Coding Scheme (Metro Manila – UVVRP)",
+    body: "The Number Coding Scheme is strictly enforced in most Metro Manila cities from 7:00 AM to 7:00 PM on weekdays.",
+    list: [
+      { label: "Monday", value: "Plates ending in 1 or 2" },
+      { label: "Tuesday", value: "Plates ending in 3 or 4" },
+      { label: "Wednesday", value: "Plates ending in 5 or 6" },
+      { label: "Thursday", value: "Plates ending in 7 or 8" },
+      { label: "Friday", value: "Plates ending in 9 or 0" },
+    ],
+  },
+  {
+    num: "15",
+    title: "Vehicle Security & Renter Responsibility",
+    body: "The renter assumes full responsibility for the vehicle and its contents during the entire rental period. ARL Car Rental shall not be held liable for any loss of personal belongings left inside the vehicle. Failure to return the vehicle or intentional damage may result in legal action under applicable Philippine laws.",
+  },
+  {
+    num: "16",
+    title: "Force Majeure",
+    body: "Neither party shall be held liable for failure or delay in fulfilling obligations due to circumstances beyond reasonable control, including natural disasters, typhoons, floods, government-imposed restrictions, road closures, or civil unrest. Both parties shall communicate promptly to agree on a fair resolution.",
+  },
+  {
+    num: "17",
+    title: "Governing Law & Dispute Resolution",
+    body: "This agreement shall be governed by and construed in accordance with the laws of the Republic of the Philippines. Any disputes that cannot be resolved amicably shall be submitted to the proper courts of competent jurisdiction in the city or municipality where ARL Car Rental's principal office is located.",
+  },
+];
+
+export default function TermsPage() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  return (
+    <div className="bg-arl-light min-h-screen">
+
+      {/* Hero banner */}
+      <div className="bg-arl-primary relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10"
+          style={{ backgroundImage: "radial-gradient(circle at 70% 50%, #4FC3F7 0%, transparent 60%)" }} />
+        <div className="relative max-w-4xl mx-auto px-6 py-16">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-arl-secondary/80 hover:text-arl-secondary text-sm font-semibold mb-8 transition"
+          >
+            ← Back
+          </button>
+          <p className="text-xs font-bold tracking-[0.25em] text-arl-secondary uppercase mb-3">ARL Car Rental</p>
+          <h1 className="font-display text-4xl md:text-5xl text-white font-black leading-tight mb-3">
+            Terms &amp; Conditions
+          </h1>
+          <p className="text-sm text-white/50">Effective upon signing of rental agreement</p>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-4xl mx-auto px-6 py-14">
+        <div className="flex flex-col gap-8">
+          {SECTIONS.map((s) => (
+            <div key={s.num} className="bg-white rounded-3xl shadow-soft p-8 flex gap-6">
+
+              {/* Number badge */}
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                  style={{ backgroundColor: "rgba(26,95,122,0.08)" }}>
+                  <span className="text-sm font-black text-arl-primary">{s.num}</span>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg font-bold text-arl-primary mb-3">{s.title}</h2>
+
+                {s.highlight && (
+                  <div className="inline-flex items-center gap-2 mb-3 px-4 py-1.5 rounded-full text-sm font-bold text-arl-primary"
+                    style={{ backgroundColor: "rgba(79,195,247,0.12)" }}>
+                    <span className="w-2 h-2 rounded-full bg-arl-secondary inline-block flex-shrink-0" />
+                    {s.highlight}
+                  </div>
+                )}
+
+                {s.body && (
+                  <p className="text-sm text-gray-600 leading-relaxed mb-3">{s.body}</p>
+                )}
+
+                {s.list && (
+                  <div className="flex flex-col gap-2 my-3">
+                    {s.list.map((item, i) => (
+                      <div key={i} className="flex items-center justify-between bg-arl-light rounded-xl px-4 py-2.5">
+                        <span className="text-sm text-gray-500">{item.label}</span>
+                        <span className="text-sm font-bold text-arl-primary">{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {s.footer && (
+                  <p className="text-sm text-gray-500 leading-relaxed mt-2">{s.footer}</p>
+                )}
+              </div>
+
+            </div>
+          ))}
+
+          {/* Acknowledgment */}
+          <div className="bg-arl-primary rounded-3xl p-8 text-center">
+            <p className="text-white/70 text-sm leading-relaxed max-w-xl mx-auto">
+              By proceeding with a rental, I confirm that I have read, understood, and agree to all of the Terms and Conditions set forth in this agreement.
+            </p>
+            <p className="text-white/40 text-xs mt-4">© 2026 ARL Car Rental. All rights reserved.</p>
+          </div>
+
+        </div>
+      </div>
+
+      <Footer />
+    </div>
+  );
+}
