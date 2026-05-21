@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { LUZON_DATA } from "../utils/luzonData";
 
 // ─────────────────────────────────────────────────────────────
 // HELPERS
@@ -616,16 +615,8 @@ const ProfilePage = ({ user }) => {
     }
   };
 
-  // Derived postal code
-  const derivedPostalCode = (() => {
-    const prov = province;
-    const mun  = municipality || city;
-    if (prov && mun && LUZON_DATA[prov]) {
-      const entry = LUZON_DATA[prov][mun];
-      if (entry?.postalCode) return entry.postalCode;
-    }
-    return postalCode;
-  })();
+  // Postal code — use value from Firestore directly (saved during registration/profile update)
+  const derivedPostalCode = postalCode;
 
   if (!user?.userID) return null;
 
