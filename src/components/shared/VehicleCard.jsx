@@ -21,17 +21,10 @@ const Stars = ({ rating, size = "text-sm" }) => (
 
 
 
-// ── Status config ─────────────────────────────────────────────
-const STATUS_CFG = {
-  pending:   { bg: "bg-yellow-100", text: "text-yellow-700", icon: "⏳" },
-  approved:  { bg: "bg-green-100",  text: "text-green-700",  icon: "✅" },
-  cancelled: { bg: "bg-red-100",    text: "text-red-600",    icon: "❌" },
-  completed: { bg: "bg-blue-100",   text: "text-blue-700",   icon: "🏁" },
-};
+
 
 // ── View Details Modal ────────────────────────────────────────
 const ViewDetailsModal = ({ car, onClose }) => {
-  const [tab, setTab]           = useState("reviews");
   const [loading, setLoading]   = useState(true);
   const [data, setData]         = useState(null);
   const [filterStar, setFilterStar] = useState(0);
@@ -59,9 +52,6 @@ const ViewDetailsModal = ({ car, onClose }) => {
   const avgRating = allReviews.length
     ? (allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length).toFixed(1)
     : "—";
-
-  const bookings = data?.bookings || [];
-  const latestBooking = bookings[0] || null;
 
   return (
     <div
@@ -96,19 +86,9 @@ const ViewDetailsModal = ({ car, onClose }) => {
 
         {/* Tabs */}
         <div className="flex border-b border-gray-100 px-6">
-          {[
-            { key: "reviews",  label: `Reviews (${allReviews.length})` },
-          ].map(({ key, label }) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`py-3 px-4 text-sm font-bold border-b-2 transition -mb-px ${
-                tab === key
-                  ? "border-arl-cta text-arl-cta"
-                  : "border-transparent text-gray-400 hover:text-gray-600"
-              }`}
-            >{label}</button>
-          ))}
+          <div className="py-3 px-4 text-sm font-bold border-b-2 border-arl-cta text-arl-cta -mb-px">
+            Reviews ({allReviews.length})
+          </div>
         </div>
 
         {/* Scrollable content */}
@@ -125,7 +105,7 @@ const ViewDetailsModal = ({ car, onClose }) => {
           )}
 
           {/* REVIEWS */}
-          {!loading && !data?.error && tab === "reviews" && (
+          {!loading && !data?.error && (
             <div className="p-6">
               <div className="flex items-center gap-6 mb-6 p-4 bg-gray-50 rounded-2xl">
                 <div className="text-center flex-shrink-0">
