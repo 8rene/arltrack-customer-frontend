@@ -597,6 +597,7 @@ const SignUpModal = ({ onClose, onSwitchToLogin }) => {
         address: {
           region:       selRegion?.regionName   || "",
           province:     selProv?.provinceName    || "",
+          city:         selMun?.municipalityName || "",  // city and municipality share the same value
           municipality: selMun?.municipalityName || "",
           barangay:     selBar?.barangayName     || "",
           street:       street.trim(),
