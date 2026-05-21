@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/NavBar";
 import Booking from "./pages/Booking";
@@ -27,40 +27,88 @@ function Home() {
   );
 }
 
+// Helper: decode userID from JWT payload (no library needed)
+const decodeJWT = (token) => {
+  try {
+    const payload = token.split(".")[1];
+    return JSON.parse(atob(payload));
+  } catch {
+    return null;
+  }
+};
+
 function App() {
   // user = basic auth info from login (email, userID, roleID, etc.)
-  const [user,        setUser]        = useState(() => {
-    // Restore from localStorage if token exists
-    const token = localStorage.getItem("arl_token");
-    const saved = localStorage.getItem("arl_user");
-    if (token && saved) {
-      try { return JSON.parse(saved); } catch { return null; }
-    }
-    return null;
-  });
+  // Stored in React state only — NOT in localStorage
+  const [user,        setUser]        = useState(null);
 
   // userDetails = firstName, lastName, phone etc. fetched from /api/user/details
-  const [userDetails, setUserDetails] = useState(() => {
-    const saved = localStorage.getItem("arl_user_details");
-    if (saved) { try { return JSON.parse(saved); } catch { return null; } }
-    return null;
-  });
+  // Stored in React state only — NOT in localStorage
+  const [userDetails, setUserDetails] = useState(null);
+
+  // On mount — if JWT exists, re-fetch user data from backend
+  // This restores the session after a page refresh without storing
+  // sensitive data in localStorage
+  useEffect(() => {
+    const token = localStorage.getItem("arl_token");
+    if (!token) return;
+
+    const decoded = decodeJWT(token);
+    if (!decoded || !decoded.userID) return;
+
+    // Check if token is expired
+    if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+      localStorage.removeItem("arl_token");
+      return;
+    }
+
+    // Re-fetch user details from backend using the JWT
+    const restoreSession = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/user/details/${decoded.userID}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!res.ok) {
+          // Token invalid or user deleted — clear it
+          localStorage.removeItem("arl_token");
+          return;
+        }
+        const details = await res.json();
+        // Reconstruct minimal user object from JWT payload
+        setUser({
+          userID:       decoded.userID,
+          email:        decoded.email        || "",
+          roleID:       decoded.roleID       || "",
+          username:     decoded.username     || "",
+          profileImage: details.profileImage || "",
+          isVerified:   details.isVerified   || false,
+        });
+        setUserDetails(details);
+      } catch (err) {
+        console.error("Session restore failed:", err);
+      }
+    };
+
+    restoreSession();
+  }, []);
 
   // Called from LoginModal after successful login
   const handleLogin = useCallback(async (loginData) => {
     setUser(loginData);
-    localStorage.setItem("arl_user", JSON.stringify(loginData));
+    // Only JWT goes to localStorage — no user data
+    const token = localStorage.getItem("arl_token");
 
-    // Fetch full user details from Firestore
+    // Fetch full user details into React state only
     try {
-      const token = localStorage.getItem("arl_token");
-      const res   = await fetch(`${process.env.REACT_APP_API_URL}/user/details/${loginData.userID}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/user/details/${loginData.userID}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       if (res.ok) {
         const details = await res.json();
         setUserDetails(details);
-        localStorage.setItem("arl_user_details", JSON.stringify(details));
+        // ✅ No localStorage.setItem("arl_user_details") — state only
       }
     } catch (err) {
       console.error("Failed to fetch user details:", err);
@@ -71,14 +119,13 @@ function App() {
     setUser(null);
     setUserDetails(null);
     localStorage.removeItem("arl_token");
-    localStorage.removeItem("arl_user");
-    localStorage.removeItem("arl_user_details");
+    // ✅ No arl_user or arl_user_details to remove — never stored
   }, []);
 
   // Called from Booking page after saving firstName/lastName
   const handleUserDetailsUpdate = useCallback((updated) => {
     setUserDetails(updated);
-    localStorage.setItem("arl_user_details", JSON.stringify(updated));
+    // ✅ No localStorage.setItem — state only
   }, []);
 
   return (
