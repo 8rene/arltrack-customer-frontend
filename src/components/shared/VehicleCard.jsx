@@ -148,7 +148,6 @@ const ViewDetailsModal = ({ car, onClose }) => {
             <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide mt-0.5">{car.bodyType}</p>
             <div className="flex items-center gap-3 mt-1 flex-wrap">
               <span className="text-xs text-gray-500">⭐ {allReviews.length} reviews</span>
-              <span className="text-xs text-gray-500">📅 {data?.bookingCount ?? bookings.length} bookings</span>
               {car.startingPrice && (
                 <span className="text-xs font-bold text-arl-cta">₱{Number(car.startingPrice).toLocaleString()} / {car.durationType}</span>
               )}
@@ -164,7 +163,6 @@ const ViewDetailsModal = ({ car, onClose }) => {
         <div className="flex border-b border-gray-100 px-6">
           {[
             { key: "reviews",  label: `Reviews (${allReviews.length})` },
-            { key: "bookings", label: `Bookings (${data?.bookingCount ?? bookings.length})` },
           ].map(({ key, label }) => (
             <button
               key={key}
@@ -264,86 +262,6 @@ const ViewDetailsModal = ({ car, onClose }) => {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {/* BOOKINGS */}
-          {!loading && !data?.error && tab === "bookings" && (
-            <div className="p-6">
-              {latestBooking ? (
-                <div className="mb-5">
-                  <p className="text-xs font-black text-arl-primary uppercase tracking-widest mb-3">Latest Booking</p>
-                  <div className="bg-arl-light rounded-2xl border border-arl-secondary/20 p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="font-mono text-xs text-gray-500 truncate max-w-xs">{latestBooking.bookingID}</span>
-                      {(() => {
-                        const s = (latestBooking.status || "pending").toLowerCase();
-                        const cfg = STATUS_CFG[s] || STATUS_CFG.pending;
-                        return (
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${cfg.bg} ${cfg.text}`}>
-                            {cfg.icon} {s.charAt(0).toUpperCase() + s.slice(1)}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                      <div>
-                        <p className="text-gray-400 font-semibold uppercase tracking-wide">Start</p>
-                        <p className="text-gray-700">{fmtDT(latestBooking.startDateTime)}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400 font-semibold uppercase tracking-wide">End</p>
-                        <p className="text-gray-700">{fmtDT(latestBooking.endDateTime)}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400 font-semibold uppercase tracking-wide">Duration</p>
-                        <p className="text-gray-700">{latestBooking.totalDays} day(s)</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-400 font-semibold uppercase tracking-wide">Drive</p>
-                        <p className="text-gray-700">{latestBooking.modeOfDriving || "—"}</p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-gray-400 font-semibold uppercase tracking-wide">Booked On</p>
-                        <p className="text-gray-700">{fmtDT(latestBooking.createdAt)}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 mb-4">
-                  <p className="text-4xl mb-3">📅</p>
-                  <p className="text-gray-400 text-sm font-medium">No bookings yet for this vehicle.</p>
-                </div>
-              )}
-
-              {bookings.length > 0 && (
-                <div>
-                  <p className="text-xs font-black text-arl-primary uppercase tracking-widest mb-3">
-                    All Bookings ({bookings.length})
-                  </p>
-                  <div className="space-y-2">
-                    {bookings.map((b, i) => {
-                      const s = (b.status || "pending").toLowerCase();
-                      const cfg = STATUS_CFG[s] || STATUS_CFG.pending;
-                      return (
-                        <div key={b.bookingID || i} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
-                          <div className="min-w-0 flex-1">
-                            <p className="font-mono text-xs text-gray-500 truncate">{b.bookingID}</p>
-                            <p className="text-xs text-gray-600 mt-0.5">
-                              {fmtDT(b.startDateTime)} → {fmtDT(b.endDateTime)}
-                            </p>
-                            {b.modeOfDriving && <p className="text-xs text-gray-400">{b.modeOfDriving}</p>}
-                          </div>
-                          <span className={`ml-3 px-2.5 py-1 rounded-full text-xs font-bold flex-shrink-0 ${cfg.bg} ${cfg.text}`}>
-                            {cfg.icon} {s.charAt(0).toUpperCase() + s.slice(1)}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>
