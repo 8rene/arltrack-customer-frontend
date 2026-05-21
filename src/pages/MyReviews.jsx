@@ -55,7 +55,7 @@ const ReviewModal = ({ booking, existingReview, userID, onClose, onSaved }) => {
         method,
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
-          userID,
+          // userID intentionally omitted — backend uses req.user.userID from JWT
           carID:     booking.carID,
           bookingID: booking.bookingID,
           rating,
