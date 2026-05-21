@@ -74,13 +74,13 @@ export default function PrivacyPage() {
   }, []);
 
   return (
-    <div className="bg-arl-light min-h-screen">
+    <div className="bg-arl-light min-h-screen pt-16">
 
       {/* Hero banner */}
       <div className="bg-arl-primary relative overflow-hidden">
         <div className="absolute inset-0 opacity-10"
           style={{ backgroundImage: "radial-gradient(circle at 70% 50%, #4FC3F7 0%, transparent 60%)" }} />
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
           <p className="text-xs font-bold tracking-[0.25em] text-arl-secondary uppercase mb-3">ARL Car Rental</p>
           <h1 className="font-display text-3xl sm:text-4xl md:text-5xl text-white font-black leading-tight mb-3">
             Privacy Policy
