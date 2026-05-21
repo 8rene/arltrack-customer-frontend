@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import "../../styles/otpModal.css";
 
@@ -42,7 +41,7 @@ const OTPModal = ({ email, onVerifySuccess, onClose }) => {
 
     try {
 
-      const response = await fetch("/api/auth/verify-otp", {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/auth/verify-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -78,7 +77,7 @@ const OTPModal = ({ email, onVerifySuccess, onClose }) => {
 
     try {
 
-      await fetch("/api/auth/send-otp", {
+      await fetch(`${process.env.REACT_APP_API_URL}/auth/send-otp`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
