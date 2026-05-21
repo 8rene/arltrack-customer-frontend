@@ -65,9 +65,9 @@ export default function Footer() {
                                 Terms and Conditions
                             </Link>
 
-                            <a href="#" className="text-gray-400 hover:text-white transition">
+                            <Link to="/privacy" className="text-gray-400 hover:text-white transition">
                                 Privacy Policy
-                            </a>
+                            </Link>
 
                             <a href="#" className="text-gray-400 hover:text-white transition">
                                 Booking Guidelines
