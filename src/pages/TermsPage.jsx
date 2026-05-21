@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import Footer from "../components/layout/Footer";
 
 const SECTIONS = [
@@ -111,8 +110,6 @@ const SECTIONS = [
 ];
 
 export default function TermsPage() {
-  const navigate = useNavigate();
-
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
@@ -125,12 +122,6 @@ export default function TermsPage() {
         <div className="absolute inset-0 opacity-10"
           style={{ backgroundImage: "radial-gradient(circle at 70% 50%, #4FC3F7 0%, transparent 60%)" }} />
         <div className="relative max-w-4xl mx-auto px-6 py-16">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-arl-secondary/80 hover:text-arl-secondary text-sm font-semibold mb-8 transition"
-          >
-            ← Back
-          </button>
           <p className="text-xs font-bold tracking-[0.25em] text-arl-secondary uppercase mb-3">ARL Car Rental</p>
           <h1 className="font-display text-4xl md:text-5xl text-white font-black leading-tight mb-3">
             Terms &amp; Conditions
