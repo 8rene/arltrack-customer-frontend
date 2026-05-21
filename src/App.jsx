@@ -7,6 +7,7 @@ import MyBookings from "./pages/MyBookings";
 import MyReviews  from "./pages/MyReviews";
 import TermsPage  from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
+import BookingGuidelinesPage from "./pages/BookingGuidelinesPage";
 import ServiceSection from "./components/shared/ServiceSection";
 import WhySection from "./components/shared/WhySection";
 import VehiclesSection from "./components/shared/VehiclesSection";
@@ -103,6 +104,7 @@ function App() {
         <Route path="/my-reviews"  element={<MyReviews   user={user} />} />
         <Route path="/terms"        element={<TermsPage />} />
         <Route path="/privacy"      element={<PrivacyPage />} />
+        <Route path="/booking-guidelines" element={<BookingGuidelinesPage />} />
       </Routes>
     </BrowserRouter>
   );

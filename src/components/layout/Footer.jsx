@@ -69,9 +69,9 @@ export default function Footer() {
                                 Privacy Policy
                             </Link>
 
-                            <a href="#" className="text-gray-400 hover:text-white transition">
+                            <Link to="/booking-guidelines" className="text-gray-400 hover:text-white transition">
                                 Booking Guidelines
-                            </a>
+                            </Link>
                         </div>
                     </div>
 
