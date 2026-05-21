@@ -19,68 +19,7 @@ const Stars = ({ rating, size = "text-sm" }) => (
   </span>
 );
 
-// ── 25 dummy reviews (5 per star) ─────────────────────────────
-const DUMMY_REVIEWS = (() => {
-  const names = [
-    "Maria Santos", "Juan dela Cruz", "Ana Reyes", "Carlo Mendoza", "Rose Tan",
-    "Mark Villanueva", "Jenny Lim", "Ryan Cruz", "Claire Ong", "Paolo Garcia",
-    "Nico Bautista", "Diana Flores", "Jess Aquino", "Tina Ramos", "Ben Torres",
-    "Kate Ferrer", "Luis Diaz", "Mia Castillo", "Ron dela Rosa", "Lea Gomez",
-    "Bong Navarro", "Iza Morales", "Eric Ocampo", "Jina Padilla", "Sam Corpus",
-  ];
-  const comments = {
-    5: [
-      "Excellent service! The car was spotless and very comfortable. Will definitely book again!",
-      "Amazing experience from start to finish. Highly recommend to everyone!",
-      "Super smooth ride, very well-maintained vehicle. 5 stars all the way!",
-      "Outstanding! The car exceeded my expectations. Great value for money.",
-      "Perfect trip! The vehicle was in top condition. Loved every minute.",
-    ],
-    4: [
-      "Really good car, comfortable and clean. Minor issue with the AC but overall great.",
-      "Enjoyed the ride, car was in good shape. Would book again next time.",
-      "Good experience, vehicle was as described. Pickup was quick and easy.",
-      "Smooth booking process and nice car. A few small scratches but nothing major.",
-      "Very satisfied with the service. Car was clean and well-maintained.",
-    ],
-    3: [
-      "Decent car, nothing special but it got the job done. Average experience.",
-      "Okay ride. The car was a bit older than expected but still functional.",
-      "Alright experience. Car was clean but the suspension felt a bit rough.",
-      "Service was okay. Car could use some freshening up but drivable.",
-      "Satisfactory. Did what we needed. Nothing extraordinary.",
-    ],
-    2: [
-      "Car had some issues with the air conditioning. Not fully satisfied.",
-      "Expected better for the price. Car was okay but a bit disappointing.",
-      "Some minor issues but manageable. Wouldn't rush to book again.",
-      "The car didn't look as good as in the photos. Some wear and tear visible.",
-      "Had a few hiccups but got through. Average at best.",
-    ],
-    1: [
-      "Not a great experience. Car had some mechanical issues during the trip.",
-      "Disappointing. The vehicle didn't match the description at all.",
-      "Would not recommend. Had too many problems with the car.",
-      "Very unsatisfied. Lots of issues and poor condition.",
-      "Expected much better. Car had problems from the start.",
-    ],
-  };
-  const reviews = [];
-  let nameIdx = 0;
-  [5, 4, 3, 2, 1].forEach((star) => {
-    comments[star].forEach((comment) => {
-      reviews.push({
-        reviewID: `dummy-${star}-${nameIdx}`,
-        userName: names[nameIdx % names.length],
-        rating: star,
-        comment,
-        createdAt: null,
-      });
-      nameIdx++;
-    });
-  });
-  return reviews;
-})();
+
 
 // ── Status config ─────────────────────────────────────────────
 const STATUS_CFG = {
@@ -107,11 +46,7 @@ const ViewDetailsModal = ({ car, onClose }) => {
       .catch(() => { setData({ error: true }); setLoading(false); });
   }
 
-  const allReviews = (() => {
-    const real = data?.reviews || [];
-    const needed = Math.max(0, 25 - real.length);
-    return [...real, ...DUMMY_REVIEWS.slice(0, needed)];
-  })();
+  const allReviews = data?.reviews || [];
 
   const filteredReviews = filterStar === 0
     ? allReviews
