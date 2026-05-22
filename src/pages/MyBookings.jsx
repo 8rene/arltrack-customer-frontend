@@ -54,7 +54,65 @@ const DR = ({ label, value, mono = false }) =>
     </div>
   ) : null;
 
-// ── Cancel modal ──────────────────────────────────────────────
+// ── Copyable ID row ───────────────────────────────────────────
+const CopyIDRow = ({ label, value }) => {
+  const [copied, setCopied] = useState(false);
+  if (!value) return null;
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <div>
+      <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">{label}</p>
+      <div className="flex items-center gap-2 mt-0.5">
+        <p className="text-sm text-gray-700 font-medium font-mono break-all">{value}</p>
+        <button
+          onClick={handleCopy}
+          title="Copy Booking ID"
+          className={`flex-shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-lg border text-xs font-bold transition-all ${
+            copied
+              ? "bg-green-50 border-green-300 text-green-600"
+              : "bg-gray-50 border-gray-200 text-gray-400 hover:bg-arl-primary/10 hover:border-arl-primary/30 hover:text-arl-primary"
+          }`}
+        >
+          {copied ? "✓ Copied" : "⎘ Copy"}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ── Inline booking ID copy (used in card header) ─────────────
+const BookingIDCopy = ({ bookingID }) => {
+  const [copied, setCopied] = useState(false);
+  if (!bookingID) return null;
+  const handleCopy = (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(bookingID).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <div className="flex items-center gap-1.5 mt-0.5">
+      <span className="text-xs font-mono text-gray-400 truncate max-w-[140px]">{bookingID}</span>
+      <button
+        onClick={handleCopy}
+        title="Copy Booking ID"
+        className={`flex-shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded-md border text-xs font-bold transition-all ${
+          copied
+            ? "bg-green-50 border-green-300 text-green-600"
+            : "bg-gray-50 border-gray-200 text-gray-400 hover:bg-arl-primary/10 hover:border-arl-primary/30 hover:text-arl-primary"
+        }`}
+      >
+        {copied ? "✓" : "⎘"}
+      </button>
+    </div>
+  );
+};
 const CancelModal = ({ booking, onConfirm, onClose, loading }) => {
   const [reason, setReason] = useState("");
   return (
@@ -172,6 +230,7 @@ const BookingCard = ({ booking, user, onCancelled }) => {
               <div>
                 <h4 className="font-black text-arl-primary text-lg leading-tight">{carName}</h4>
                 {carBodyType && <p className="text-xs text-gray-400 font-semibold uppercase tracking-wide">{carBodyType}</p>}
+                <BookingIDCopy bookingID={bookingID} />
               </div>
               <StatusBadge status={status} />
             </div>
@@ -240,7 +299,7 @@ const BookingCard = ({ booking, user, onCancelled }) => {
             <div className="px-5 py-4 bg-gray-50">
               <p className="text-xs font-black text-arl-primary uppercase tracking-widest mb-3">🚗 Booking Details</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
-                <DR label="Booking ID"  value={bookingID} mono />
+                <CopyIDRow label="Booking ID" value={bookingID} />
                 <DR label="Booked On"   value={fmtDT(createdAt)} />
                 <DR label="Start"       value={fmtDT(startDateTime)} />
                 <DR label="End"         value={fmtDT(endDateTime)} />
