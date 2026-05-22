@@ -3,6 +3,31 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, CheckCircle, MapPin } from 'lucide-react';
 import MapPicker from '../components/shared/MapPicker';
 
+// ── Copy Booking ID button ─────────────────────────────────────
+const CopyBookingIDButton = ({ bookingID }) => {
+  const [copied, setCopied] = useState(false);
+  if (!bookingID) return null;
+  const handleCopy = () => {
+    navigator.clipboard.writeText(bookingID).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <button
+      onClick={handleCopy}
+      title="Copy Booking ID"
+      className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all ${
+        copied
+          ? 'bg-green-50 border-green-300 text-green-600'
+          : 'bg-white border-gray-200 text-gray-400 hover:bg-arl-primary/10 hover:border-arl-primary/40 hover:text-arl-primary'
+      }`}
+    >
+      {copied ? '✓ Copied!' : '⎘ Copy'}
+    </button>
+  );
+};
+
 const DEFAULT_LOCATION = 'Saog, Marilao, Bulacan';
 const LS_KEY = 'arl_booking_draft';
 const loadDraft = () => { try { const r = localStorage.getItem(LS_KEY); return r ? JSON.parse(r) : {}; } catch { return {}; } };
@@ -1424,7 +1449,10 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
             <div className="bg-gray-50 rounded-xl p-4 mb-4 text-left space-y-2">
               <div>
                 <p className="text-xs text-gray-400">Booking ID</p>
-                <p className="text-sm font-mono font-bold text-arl-primary break-all">{bookingReference}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-sm font-mono font-bold text-arl-primary break-all flex-1">{bookingReference}</p>
+                  <CopyBookingIDButton bookingID={bookingReference} />
+                </div>
               </div>
               <div>
                 <p className="text-xs text-gray-400">Vehicle</p>
