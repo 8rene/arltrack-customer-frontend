@@ -571,10 +571,8 @@ const SignUpModal = ({ onClose, onSwitchToLogin }) => {
   };
 
   const handleOTPRestart = async () => {
-    setLoading(true);
     try { setGeneratedOTP(await sendOTP()); }
     catch (err) { console.error("OTP resend failed:", err); }
-    finally { setLoading(false); }
   };
 
   // ── Save everything to Firestore (backend handles Auth + Storage + Firestore) ─
