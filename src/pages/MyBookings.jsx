@@ -120,7 +120,7 @@ const BookingCard = ({ booking, user, onCancelled }) => {
       const res   = await fetch(`${process.env.REACT_APP_API_URL}/bookings/${bookingID}/cancel`, {
         method:  "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body:    JSON.stringify({ userID: user.userID, reason: reason || "Cancelled by user." }),
+        body:    JSON.stringify({ reason: reason || "Cancelled by user." }), // userID from JWT on backend
       });
       if (!res.ok) {
         const err = await res.json();
