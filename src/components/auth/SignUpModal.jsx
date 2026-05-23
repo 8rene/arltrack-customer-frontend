@@ -325,7 +325,6 @@ const OTPStep = ({ email, generatedOTP, onVerify, onRestart, loading }) => {
   const [errMsg,   setErrMsg]   = useState("");
   const [blocked,  setBlocked]  = useState(false);
   const inputs = useRef([]);
-
   useEffect(() => {
     setDigits(["", "", "", "", "", ""]); setTimer(60);
     setAttempts(0); setErrMsg(""); setBlocked(false);
@@ -357,7 +356,7 @@ const OTPStep = ({ email, generatedOTP, onVerify, onRestart, loading }) => {
     if (entered.length < 6) { setErrMsg("Please enter all 6 digits."); return; }
     if (entered !== generatedOTP) {
       const na = attempts + 1; setAttempts(na);
-      if (na >= MAX_ATTEMPTS) { setBlocked(true); onRestart(); return; }
+      if (na >= MAX_ATTEMPTS) { setBlocked(true); setErrMsg("Too many incorrect attempts. Please request a new OTP."); return; }
       const left = MAX_ATTEMPTS - na;
       setErrMsg(`Incorrect OTP. ${left} attempt${left === 1 ? "" : "s"} remaining.`);
       setDigits(["", "", "", "", "", ""]); setTimeout(() => inputs.current[0]?.focus(), 50);
@@ -402,7 +401,9 @@ const OTPStep = ({ email, generatedOTP, onVerify, onRestart, loading }) => {
       </button>
 
       <div className="text-sm text-gray-500">
-        {timer > 0 ? (
+        {blocked ? (
+          <button type="button" onClick={onRestart} className="text-red-500 font-bold hover:underline text-xs">Get new OTP</button>
+        ) : timer > 0 ? (
           <span className="inline-flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1 text-xs font-bold text-arl-primary">
             ⏱ Resend in {timer}s
           </span>
