@@ -55,18 +55,21 @@ const AuthModal = ({ onClose, onLogin, initialView = "login" }) => {
             localStorage.removeItem("rememberEmail");
         }
         try {
-            const response = await fetch("/api/auth/login", {
+            const response = await fetch(`${process.env.REACT_APP_API_URL}/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: loginEmail, password: loginPassword }),
             });
             const data = await response.json();
             if (!response.ok) {
-                setLoginError("Invalid email or password");
+                setLoginError(data.message || "Invalid email or password");
                 return;
             }
+            // Save JWT to localStorage — user data stays in React state (via onLogin)
+            localStorage.setItem("arl_token", data.token);
             setLoginError("");
-            await fetch("/api/auth/send-otp", {
+            // Send OTP for 2FA verification
+            await fetch(`${process.env.REACT_APP_API_URL}/auth/send-otp`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email: loginEmail }),
@@ -93,8 +96,16 @@ const AuthModal = ({ onClose, onLogin, initialView = "login" }) => {
             alert("You must agree to Terms & Conditions");
             return;
         }
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        setGeneratedOTP(otp);
+        // Send OTP via backend — no client-side OTP generation
+        try {
+            await fetch(`${process.env.REACT_APP_API_URL}/auth/send-otp`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: signupEmail }),
+            });
+        } catch (err) {
+            console.error("Failed to send OTP:", err);
+        }
         setShowSignupOTP(true);
     };
 
@@ -365,7 +376,12 @@ const AuthModal = ({ onClose, onLogin, initialView = "login" }) => {
             {showLoginOTP && (
                 <OTPModal
                     email={loginEmail}
-                    onVerifySuccess={onLogin}
+                    onVerifySuccess={() => {
+                      // OTP verified — close modal and notify App.jsx to restore session
+                      setShowLoginOTP(false);
+                      onClose();
+                      onLogin({ email: loginEmail });
+                    }}
                     onClose={() => setShowLoginOTP(false)}
                 />
             )}
