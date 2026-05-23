@@ -597,7 +597,6 @@ const SignUpModal = ({ onClose, onSwitchToLogin }) => {
   };
 
   // ── Step 4: OTP ────────────────────────────────────────────────────────────
-  const [generatedOTP, setGeneratedOTP] = useState("");
 
   const sendOTP = async () => {
     const res = await fetch(`${API}/auth/send-otp`, {
