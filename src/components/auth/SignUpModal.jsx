@@ -579,6 +579,7 @@ const SignUpModal = ({ onClose, onSwitchToLogin }) => {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to send OTP.");
+    if (data.emailSent === false) throw new Error("Could not send OTP email. Please try again.");
   };
 
   const handleOTPRestart = async () => {
