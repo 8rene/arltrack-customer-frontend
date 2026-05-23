@@ -93,11 +93,14 @@ const SignupOTP = ({ isOpen, email, generatedOTP, onVerify, onClose, onRestart, 
   };
 
   const resendOTP = () => {
+    // Reset UI state
     setTimer(60);
     setOtp(["", "", "", "", "", ""]);
     setAttempts(0);
     setErrorMsg("");
     setTimeout(() => inputs.current[0]?.focus(), 50);
+    // ✅ Tell parent to call sendOTP again — generates and emails a new OTP from backend
+    onRestart();
   };
 
   if (!isOpen) return null;
