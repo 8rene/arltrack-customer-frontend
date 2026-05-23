@@ -24,8 +24,6 @@ const AuthModal = ({ onClose, onLogin, initialView = "login" }) => {
     const [showTerms, setShowTerms] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [showSignupOTP, setShowSignupOTP] = useState(false);
-    const [generatedOTP, setGeneratedOTP] = useState("");
-
     const phoneRegex = /^(\+639|09)\d{9}$/;
 
     // Load remembered email
@@ -82,7 +80,7 @@ const AuthModal = ({ onClose, onLogin, initialView = "login" }) => {
     };
 
     // --- Signup handlers ---
-    const handleSignupSubmit = (e) => {
+    const handleSignupSubmit = async (e) => {
         e.preventDefault();
         if (signupPassword !== confirm) {
             alert("Passwords do not match");
@@ -403,7 +401,6 @@ const AuthModal = ({ onClose, onLogin, initialView = "login" }) => {
             <SignupOTP
                 isOpen={showSignupOTP}
                 email={signupEmail}
-                otp={generatedOTP}
                 onVerify={handleVerifySignupOTP}
                 onClose={() => setShowSignupOTP(false)}
             />
