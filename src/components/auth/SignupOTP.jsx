@@ -166,12 +166,14 @@ const SignupOTP = ({ isOpen, email, generatedOTP, onVerify, onClose, onRestart, 
           onClick={verifyOTP}
           disabled={loading || blocked || filled < 6}
         >
-          {loading ? "Verifying…" : "Verify OTP"}
+          {loading ? "Sending OTP…" : "Verify OTP"}
         </button>
 
         {/* Resend / timer */}
         <div className="resend">
-          {timer > 0 ? (
+          {loading ? (
+            <span className="otp-timer">⏳ Sending new OTP…</span>
+          ) : timer > 0 ? (
             <span className="otp-timer">⏱ Resend in {timer}s</span>
           ) : (
             <button className="resend-btn" onClick={resendOTP}>
