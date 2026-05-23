@@ -4,11 +4,12 @@ import "../../styles/SignupOTP.css";
 const MAX_ATTEMPTS = 3;
 
 const SignupOTP = ({ isOpen, email, generatedOTP, onVerify, onClose, onRestart, loading }) => {
-  const [otp,       setOtp]       = useState(["", "", "", "", "", ""]);
-  const [timer,     setTimer]     = useState(60);
-  const [attempts,  setAttempts]  = useState(0);
-  const [errorMsg,  setErrorMsg]  = useState("");
-  const [blocked,   setBlocked]   = useState(false);
+  const [otp,         setOtp]         = useState(["", "", "", "", "", ""]);
+  const [timer,       setTimer]       = useState(60);
+  const [attempts,    setAttempts]    = useState(0);
+  const [errorMsg,    setErrorMsg]    = useState("");
+  const [blocked,     setBlocked]     = useState(false);
+  const [resendCount, setResendCount] = useState(0);
   const inputs = useRef([]);
 
   // Reset everything when modal opens
@@ -19,15 +20,20 @@ const SignupOTP = ({ isOpen, email, generatedOTP, onVerify, onClose, onRestart, 
     setAttempts(0);
     setErrorMsg("");
     setBlocked(false);
+    setResendCount(0);
     setTimeout(() => inputs.current[0]?.focus(), 100);
   }, [isOpen]);
 
-  // Countdown timer — only runs when not blocked
+  // Countdown timer — restarts on every resend
   useEffect(() => {
-    if (!isOpen || timer === 0 || blocked) return;
-    const interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
+    if (!isOpen || blocked) return;
+    setTimer(60);
+    const interval = setInterval(() => setTimer((prev) => {
+      if (prev <= 1) { clearInterval(interval); return 0; }
+      return prev - 1;
+    }), 1000);
     return () => clearInterval(interval);
-  }, [isOpen, timer, blocked]);
+  }, [isOpen, resendCount, blocked]);
 
   const handleChange = (value, index) => {
     // Letters blocked — digits only
@@ -94,10 +100,10 @@ const SignupOTP = ({ isOpen, email, generatedOTP, onVerify, onClose, onRestart, 
 
   const resendOTP = () => {
     // Reset UI state
-    setTimer(60);
     setOtp(["", "", "", "", "", ""]);
     setAttempts(0);
     setErrorMsg("");
+    setResendCount((c) => c + 1); // triggers countdown useEffect to restart timer
     setTimeout(() => inputs.current[0]?.focus(), 50);
     // ✅ Tell parent to call sendOTP again — generates and emails a new OTP from backend
     onRestart();
