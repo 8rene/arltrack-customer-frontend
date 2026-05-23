@@ -319,19 +319,22 @@ const ImageCapture = ({ label, cameraOnly = false, value, onChange, required }) 
 const MAX_ATTEMPTS = 3;
 
 const OTPStep = ({ email, onVerify, onRestart, loading }) => {
-  const [digits,     setDigits]     = useState(["", "", "", "", "", ""]);
-  const [timer,      setTimer]      = useState(60);
-  const [attempts,   setAttempts]   = useState(0);
-  const [errMsg,     setErrMsg]     = useState("");
-  const [blocked,    setBlocked]    = useState(false);
-  const [verifying,  setVerifying]  = useState(false);
+  const [digits,      setDigits]      = useState(["", "", "", "", "", ""]);
+  const [timer,       setTimer]       = useState(60);
+  const [attempts,    setAttempts]    = useState(0);
+  const [errMsg,      setErrMsg]      = useState("");
+  const [blocked,     setBlocked]     = useState(false);
+  const [verifying,   setVerifying]   = useState(false);
+  // otpKey increments on every new OTP send — resets UI cleanly
+  const [otpKey,      setOtpKey]      = useState(0);
   const inputs = useRef([]);
 
+  // Reset UI when a new OTP is sent (otpKey bumped by parent via onRestart)
   useEffect(() => {
     setDigits(["", "", "", "", "", ""]); setTimer(60);
     setAttempts(0); setErrMsg(""); setBlocked(false);
     setTimeout(() => inputs.current[0]?.focus(), 150);
-  }, [email]);
+  }, [otpKey]);
 
   useEffect(() => {
     if (timer === 0 || blocked) return;
@@ -356,29 +359,47 @@ const OTPStep = ({ email, onVerify, onRestart, loading }) => {
     if (blocked || verifying) return;
     const entered = digits.join("");
     if (entered.length < 6) { setErrMsg("Please enter all 6 digits."); return; }
+
     setVerifying(true);
     try {
-      // ✅ Backend validates OTP — never trust client-side comparison
-      const res  = await fetch(`${process.env.REACT_APP_API_URL}/auth/verify-otp`, {
+      const res  = await fetch(`${API}/auth/verify-otp`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ email, otp: entered }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        const na = attempts + 1; setAttempts(na);
-        if (na >= MAX_ATTEMPTS) { setBlocked(true); onRestart(); return; }
-        setErrMsg(data.message || `Incorrect OTP. ${MAX_ATTEMPTS - na} attempt${MAX_ATTEMPTS - na === 1 ? "" : "s"} remaining.`);
-        setDigits(["", "", "", "", "", ""]); setTimeout(() => inputs.current[0]?.focus(), 50);
+
+      if (res.ok) {
+        // OTP correct — proceed to save registration
+        onVerify();
         return;
       }
-      onVerify();
-    } catch (err) {
-      setErrMsg("Could not verify OTP. Please try again.");
+
+      // Wrong OTP — parse remaining attempts from backend message
+      const na = attempts + 1;
+      setAttempts(na);
+      setDigits(["", "", "", "", "", ""]);
+      setTimeout(() => inputs.current[0]?.focus(), 50);
+
+      if (res.status === 429 || na >= MAX_ATTEMPTS) {
+        setBlocked(true);
+        setErrMsg("Too many incorrect attempts. Please request a new OTP.");
+      } else {
+        setErrMsg(data.message || `Incorrect OTP. ${MAX_ATTEMPTS - na} attempt${MAX_ATTEMPTS - na === 1 ? "" : "s"} remaining.`);
+      }
+    } catch {
+      setErrMsg("Network error. Please try again.");
     } finally {
       setVerifying(false);
     }
   };
+
+  const handleResend = async () => {
+    await onRestart();
+    setOtpKey((k) => k + 1); // bumps the reset useEffect
+  };
+
+  const isLoading = loading || verifying;
 
   return (
     <div className="flex flex-col items-center py-2">
@@ -387,13 +408,16 @@ const OTPStep = ({ email, onVerify, onRestart, loading }) => {
       <p className="text-sm text-gray-500 text-center mb-1">Enter the 6-digit OTP sent to</p>
       <p className="text-sm font-bold text-arl-primary text-center break-all mb-4">{email}</p>
 
+      {/* Attempt dots — fill red as attempts are used */}
       <div className="flex gap-2 mb-1">
         {[...Array(MAX_ATTEMPTS)].map((_, i) => (
-          <span key={i} className={`w-2.5 h-2.5 rounded-full inline-block ${i < attempts ? "bg-red-400" : "bg-gray-200"}`} />
+          <span key={i} className={`w-2.5 h-2.5 rounded-full inline-block transition-colors duration-300 ${i < attempts ? "bg-red-400" : "bg-gray-200"}`} />
         ))}
       </div>
       <p className="text-xs text-gray-400 mb-4">
-        {attempts === 0 ? `${MAX_ATTEMPTS} attempts allowed` : `${MAX_ATTEMPTS - attempts} attempt${MAX_ATTEMPTS - attempts === 1 ? "" : "s"} remaining`}
+        {attempts === 0
+          ? `${MAX_ATTEMPTS} attempts allowed`
+          : `${MAX_ATTEMPTS - attempts} attempt${MAX_ATTEMPTS - attempts === 1 ? "" : "s"} remaining`}
       </p>
 
       <div className="flex gap-2 mb-4" onPaste={handlePaste}>
@@ -410,18 +434,20 @@ const OTPStep = ({ email, onVerify, onRestart, loading }) => {
 
       {errMsg && <p className="text-red-500 text-xs mb-3 flex items-center gap-1">⛔ {errMsg}</p>}
 
-      <button type="button" onClick={verify} disabled={loading || blocked || digits.filter(Boolean).length < 6}
+      <button type="button" onClick={verify} disabled={isLoading || blocked || digits.filter(Boolean).length < 6}
         className="w-full py-3 bg-arl-primary text-white rounded-xl font-bold text-sm hover:bg-arl-secondary transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-3">
-        {loading ? "Saving registration…" : "Verify OTP"}
+        {verifying ? "Checking…" : isLoading ? "Saving registration…" : "Verify OTP"}
       </button>
 
       <div className="text-sm text-gray-500">
-        {timer > 0 ? (
+        {blocked ? (
+          <button type="button" onClick={handleResend} className="text-red-500 font-bold hover:underline text-xs">Get new OTP</button>
+        ) : timer > 0 ? (
           <span className="inline-flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1 text-xs font-bold text-arl-primary">
             ⏱ Resend in {timer}s
           </span>
         ) : (
-          <button type="button" onClick={onRestart} className="text-arl-secondary font-bold hover:underline text-xs">Resend OTP</button>
+          <button type="button" onClick={handleResend} className="text-arl-secondary font-bold hover:underline text-xs">Resend OTP</button>
         )}
       </div>
     </div>
@@ -571,6 +597,8 @@ const SignUpModal = ({ onClose, onSwitchToLogin }) => {
   };
 
   // ── Step 4: OTP ────────────────────────────────────────────────────────────
+  const [generatedOTP, setGeneratedOTP] = useState("");
+
   const sendOTP = async () => {
     const res = await fetch(`${API}/auth/send-otp`, {
       method: "POST",
@@ -579,12 +607,11 @@ const SignUpModal = ({ onClose, onSwitchToLogin }) => {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || "Failed to send OTP.");
-    if (data.emailSent === false) throw new Error("Could not send OTP email. Please try again.");
   };
 
   const handleOTPRestart = async () => {
     try { await sendOTP(); }
-    catch (err) { console.error("OTP resend failed:", err); }
+    catch (err) { console.error("OTP resend failed:", err); throw err; }
   };
 
   // ── Save everything to Firestore (backend handles Auth + Storage + Firestore) ─
@@ -609,6 +636,7 @@ const SignUpModal = ({ onClose, onSwitchToLogin }) => {
         address: {
           region:       selRegion?.regionName   || "",
           province:     selProv?.provinceName    || "",
+          city:         selMun?.municipalityName || "",  // city and municipality share the same value
           municipality: selMun?.municipalityName || "",
           barangay:     selBar?.barangayName     || "",
           street:       street.trim(),

@@ -3,12 +3,13 @@ import "../../styles/SignupOTP.css";
 
 const MAX_ATTEMPTS = 3;
 
-const SignupOTP = ({ isOpen, email, onVerify, onClose, onRestart, loading }) => {
-  const [otp,       setOtp]       = useState(["", "", "", "", "", ""]);
-  const [timer,     setTimer]     = useState(60);
-  const [attempts,  setAttempts]  = useState(0);
-  const [errorMsg,  setErrorMsg]  = useState("");
-  const [blocked,   setBlocked]   = useState(false);
+const SignupOTP = ({ isOpen, email, generatedOTP, onVerify, onClose, onRestart, loading }) => {
+  const [otp,         setOtp]         = useState(["", "", "", "", "", ""]);
+  const [timer,       setTimer]       = useState(60);
+  const [attempts,    setAttempts]    = useState(0);
+  const [errorMsg,    setErrorMsg]    = useState("");
+  const [blocked,     setBlocked]     = useState(false);
+  const [resendCount, setResendCount] = useState(0);
   const inputs = useRef([]);
 
   // Reset everything when modal opens
@@ -19,15 +20,20 @@ const SignupOTP = ({ isOpen, email, onVerify, onClose, onRestart, loading }) => 
     setAttempts(0);
     setErrorMsg("");
     setBlocked(false);
+    setResendCount(0);
     setTimeout(() => inputs.current[0]?.focus(), 100);
   }, [isOpen]);
 
-  // Countdown timer — only runs when not blocked
+  // Countdown timer — restarts on every resend
   useEffect(() => {
-    if (!isOpen || timer === 0 || blocked) return;
-    const interval = setInterval(() => setTimer((prev) => prev - 1), 1000);
+    if (!isOpen || blocked) return;
+    setTimer(60);
+    const interval = setInterval(() => setTimer((prev) => {
+      if (prev <= 1) { clearInterval(interval); return 0; }
+      return prev - 1;
+    }), 1000);
     return () => clearInterval(interval);
-  }, [isOpen, timer, blocked]);
+  }, [isOpen, resendCount, blocked]);
 
   const handleChange = (value, index) => {
     // Letters blocked — digits only
@@ -56,8 +62,8 @@ const SignupOTP = ({ isOpen, email, onVerify, onClose, onRestart, loading }) => 
     }
   };
 
-  const verifyOTP = async () => {
-    if (blocked || verifying) return;
+  const verifyOTP = () => {
+    if (blocked) return;
 
     const entered = otp.join("");
     if (entered.length < 6) {
@@ -65,47 +71,39 @@ const SignupOTP = ({ isOpen, email, onVerify, onClose, onRestart, loading }) => 
       return;
     }
 
-    setVerifying(true);
-    try {
-      // ✅ Backend validates OTP — never trust client-side comparison
-      const res  = await fetch(`${process.env.REACT_APP_API_URL}/auth/verify-otp`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ email, otp: entered }),
-      });
-      const data = await res.json();
+    if (entered !== generatedOTP) {
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
 
-      if (!res.ok) {
-        const newAttempts = attempts + 1;
-        setAttempts(newAttempts);
-        if (newAttempts >= MAX_ATTEMPTS) {
-          setBlocked(true);
-          setErrorMsg("");
-          onRestart();
-          return;
-        }
-        const remaining = MAX_ATTEMPTS - newAttempts;
-        setErrorMsg(data.message || `Incorrect OTP. ${remaining} attempt${remaining === 1 ? "" : "s"} remaining.`);
-        setOtp(["", "", "", "", "", ""]);
-        setTimeout(() => inputs.current[0]?.focus(), 50);
+      if (newAttempts >= MAX_ATTEMPTS) {
+        // Max attempts reached — block and signal parent to restart OTP
+        setBlocked(true);
+        setErrorMsg("");
+        // Immediately call restart so parent can go back without waiting
+        onRestart();
         return;
       }
 
-      // Correct OTP
-      onVerify();
-    } catch (err) {
-      setErrorMsg("Could not verify OTP. Please try again.");
-    } finally {
-      setVerifying(false);
+      const remaining = MAX_ATTEMPTS - newAttempts;
+      setErrorMsg(
+        `Incorrect OTP. ${remaining} attempt${remaining === 1 ? "" : "s"} remaining.`
+      );
+      // Clear the boxes for re-entry
+      setOtp(["", "", "", "", "", ""]);
+      setTimeout(() => inputs.current[0]?.focus(), 50);
+      return;
     }
+
+    // Correct OTP
+    onVerify();
   };
 
   const resendOTP = () => {
     // Reset UI state
-    setTimer(60);
     setOtp(["", "", "", "", "", ""]);
     setAttempts(0);
     setErrorMsg("");
+    setResendCount((c) => c + 1); // triggers countdown useEffect to restart timer
     setTimeout(() => inputs.current[0]?.focus(), 50);
     // ✅ Tell parent to call sendOTP again — generates and emails a new OTP from backend
     onRestart();
@@ -166,9 +164,9 @@ const SignupOTP = ({ isOpen, email, onVerify, onClose, onRestart, loading }) => 
         <button
           className="verify-btn"
           onClick={verifyOTP}
-          disabled={loading || verifying || blocked || filled < 6}
+          disabled={loading || blocked || filled < 6}
         >
-          {loading || verifying ? "Verifying…" : "Verify OTP"}
+          {loading ? "Verifying…" : "Verify OTP"}
         </button>
 
         {/* Resend / timer */}
