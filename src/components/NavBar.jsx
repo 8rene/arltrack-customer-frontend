@@ -75,9 +75,17 @@ export default function Navbar({ user, userDetails, onLogin, onLogout }) {
                 onClick={() => setShowDropdown(!showDropdown)}
                 className="flex items-center gap-2 bg-arl-primary text-white text-sm font-semibold px-4 py-2 rounded-full hover:bg-arl-secondary transition-colors"
               >
-                <span className="w-7 h-7 rounded-full bg-white text-arl-primary font-bold flex items-center justify-center text-xs flex-shrink-0">
-                  {avatarLetter}
-                </span>
+                {user?.profileImage ? (
+                  <img
+                    src={user.profileImage}
+                    alt={displayName}
+                    className="w-7 h-7 rounded-full object-cover flex-shrink-0 border border-white/30"
+                  />
+                ) : (
+                  <span className="w-7 h-7 rounded-full bg-white text-arl-primary font-bold flex items-center justify-center text-xs flex-shrink-0">
+                    {avatarLetter}
+                  </span>
+                )}
                 <span className="hidden sm:block max-w-[120px] truncate">{displayName}</span>
               </button>
 
