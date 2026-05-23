@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { storage } from "../firebase";
+import { ref, uploadString, getDownloadURL } from "firebase/storage";
 
 // ─────────────────────────────────────────────────────────────
 // HELPERS
@@ -554,7 +556,7 @@ const ProfilePage = ({ user }) => {
       setStreet(data.street            || "");
       setPostalCode(data.postalCode    || "");
       setVillage(data.village          || "");
-      setAvatarURL(data.profileImageUrl|| "");
+      setAvatarURL(data.profileImage || "");
       setBirthDate(data.birthDate      || "");
       setUserAddressID(data.userAddressID || "");
     } catch {
@@ -592,20 +594,31 @@ const ProfilePage = ({ user }) => {
     if (file.size > 5 * 1024 * 1024)    { setUploadError("Image must be under 5MB.");       return; }
     setUploading(true); setUploadError("");
     try {
-      const token    = localStorage.getItem("arl_token");
-      const formData = new FormData();
-      formData.append("profileImage", file);
-      formData.append("userID", user.userID);
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/user/profile/${user.userID}/avatar`, {
-        method:  "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body:    formData,
+      const token = localStorage.getItem("arl_token");
+
+      // 1. Convert file to base64
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // 2. Upload to Firebase Storage directly from frontend
+      const storageRef   = ref(storage, `avatars/${user.userID}`);
+      await uploadString(storageRef, base64, "base64", { contentType: file.type });
+      const profileImage = await getDownloadURL(storageRef);
+
+      // 3. Send URL to backend — JSON body, not FormData
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/user/avatar/${user.userID}`, {
+        method:  "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ profileImage }),
       });
       if (!res.ok) throw new Error("Upload failed.");
       const data = await res.json();
-      setAvatarURL(data.profileImageUrl || data.url || URL.createObjectURL(file));
-      // Also update profile state so it persists
-      setProfile(prev => ({ ...prev, profileImageUrl: data.profileImageUrl || data.url }));
+      setAvatarURL(data.profileImage || profileImage);
+      setProfile(prev => ({ ...prev, profileImage: data.profileImage || profileImage }));
     } catch (err) {
       // Fallback: show local preview even if server upload fails
       setAvatarURL(URL.createObjectURL(file));
