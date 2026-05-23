@@ -610,8 +610,8 @@ const ProfilePage = ({ user }) => {
       const profileImage = await getDownloadURL(storageRef);
 
       // 3. Send URL to backend — JSON body, not FormData
-      const res = await fetch(`${process.env.REACT_APP_API_URL}/user/avatar/${user.userID}`, {
-        method:  "PUT",
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/user/profile/${user.userID}/avatar`, {
+        method:  "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body:    JSON.stringify({ profileImage }),
       });
