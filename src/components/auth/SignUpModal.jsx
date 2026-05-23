@@ -582,7 +582,7 @@ const SignUpModal = ({ onClose, onSwitchToLogin }) => {
   };
 
   const handleOTPRestart = async () => {
-    try { setGeneratedOTP(await sendOTP()); }
+    try { await sendOTP(); }
     catch (err) { console.error("OTP resend failed:", err); }
   };
 
@@ -682,7 +682,7 @@ const SignUpModal = ({ onClose, onSwitchToLogin }) => {
       if (!validateS3()) return;
       setLoading(true);
       try {
-        setGeneratedOTP(await sendOTP());
+        await sendOTP();
         setStep(4);
       } catch (err) {
         alert(err.message || "Could not send OTP. Please try again.");
