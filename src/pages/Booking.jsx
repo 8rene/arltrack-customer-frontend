@@ -304,7 +304,10 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
       setStartDate(''); setStartTime(''); setEndDate(''); setEndTime('');
     }
     try {
-      const res  = await fetch(`${process.env.REACT_APP_API_URL}/services/car-bookings/${car.carID}`);
+      const token = localStorage.getItem("arl_token");
+      const res  = await fetch(`${process.env.REACT_APP_API_URL}/services/car-bookings/${car.carID}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const data = await res.json();
       setCarBookings(data);
       setDateStatuses(getDateStatuses(data));
