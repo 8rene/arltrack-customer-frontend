@@ -3,31 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, CheckCircle, MapPin } from 'lucide-react';
 import MapPicker from '../components/shared/MapPicker';
 
-// ── Copy Booking ID button ─────────────────────────────────────
-const CopyBookingIDButton = ({ bookingID }) => {
-  const [copied, setCopied] = useState(false);
-  if (!bookingID) return null;
-  const handleCopy = () => {
-    navigator.clipboard.writeText(bookingID).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-  return (
-    <button
-      onClick={handleCopy}
-      title="Copy Booking ID"
-      className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all ${
-        copied
-          ? 'bg-green-50 border-green-300 text-green-600'
-          : 'bg-white border-gray-200 text-gray-400 hover:bg-arl-primary/10 hover:border-arl-primary/40 hover:text-arl-primary'
-      }`}
-    >
-      {copied ? '✓ Copied!' : '⎘ Copy'}
-    </button>
-  );
-};
-
 const DEFAULT_LOCATION = 'Saog, Marilao, Bulacan';
 const LS_KEY = 'arl_booking_draft';
 const loadDraft = () => { try { const r = localStorage.getItem(LS_KEY); return r ? JSON.parse(r) : {}; } catch { return {}; } };
@@ -254,17 +229,15 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
   const [destination,       setDestination]        = useState(initVal('destination',     'destination'));
   const [driveType,         setDriveType]          = useState('chauffeur');
   const [firstName,         setFirstName]          = useState(() => {
-    if (userDetails?.firstName) return userDetails.firstName;
-    return localStorage.getItem("arl_remember_firstname") || "";
+    return userDetails?.firstName || "";
   });
   const [lastName,          setLastName]           = useState(() => {
-    if (userDetails?.lastName) return userDetails.lastName;
-    return localStorage.getItem("arl_remember_lastname") || "";
+    return userDetails?.lastName || "";
   });
   const [contact,           setContact]            = useState(userDetails?.phone || user?.phone || "");
   const [email,             setEmail]              = useState(userDetails?.email || user?.email || "");
   const [rememberName,      setRememberName]       = useState(
-    !!(localStorage.getItem("arl_remember_firstname") || localStorage.getItem("arl_remember_lastname"))
+!!(userDetails?.firstName || userDetails?.lastName)
   );
   const [specialNotes,      setSpecialNotes]       = useState('');
   const [paymentAmount,     setPaymentAmount]      = useState('deposit');
@@ -1075,8 +1048,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
                         const checked = e.target.checked;
                         setRememberName(checked);
                         if (checked) {
-                          localStorage.setItem("arl_remember_firstname", firstName);
-                          localStorage.setItem("arl_remember_lastname",  lastName);
+                          // firstName/lastName saved to backend below — no localStorage needed
                           // Also save to DB if logged in
                           if (user?.userID && (firstName || lastName)) {
                             const token = localStorage.getItem("arl_token");
@@ -1091,8 +1063,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
                             }).catch(console.error);
                           }
                         } else {
-                          localStorage.removeItem("arl_remember_firstname");
-                          localStorage.removeItem("arl_remember_lastname");
+
                         }
                       }}
                       className="accent-arl-primary w-4 h-4"
@@ -1449,10 +1420,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
             <div className="bg-gray-50 rounded-xl p-4 mb-4 text-left space-y-2">
               <div>
                 <p className="text-xs text-gray-400">Booking ID</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <p className="text-sm font-mono font-bold text-arl-primary break-all flex-1">{bookingReference}</p>
-                  <CopyBookingIDButton bookingID={bookingReference} />
-                </div>
+                <p className="text-sm font-mono font-bold text-arl-primary break-all">{bookingReference}</p>
               </div>
               <div>
                 <p className="text-xs text-gray-400">Vehicle</p>
