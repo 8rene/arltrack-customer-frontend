@@ -429,8 +429,8 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
         // Start is set, no end yet → this click is the end date
         const clickedDate = new Date(key);
         const startDateObj = new Date(startDate);
-        if (clickedDate <= startDateObj) {
-          // Clicked on or before start → make it new start
+        if (clickedDate < startDateObj) {
+          // Clicked before start → make it new start
           setStartDate(key);
           setEndDate('');
           setEndTime('');
@@ -458,8 +458,6 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
     const numDays   = new Date(year, month + 1, 0).getDate();
     const startDO   = startDate ? toMidnight(new Date(startDate)) : null;
     const endDO     = endDate   ? toMidnight(new Date(endDate))   : null;
-    // Right calendar: block start date and earlier so end date must be after start
-    const minEndDate = (idx === 1 && startDO) ? startDO : null;
 
     return (
       <div key={idx} className="border-2 border-gray-200 rounded-2xl p-4">
@@ -482,8 +480,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
             const ds     = dateStatuses[key] || 'available';
             const style  = DATE_STYLES[ds] || DATE_STYLES.available;
             const isPast = date < today;
-            const isBeforeOrSameAsStart = !!(minEndDate && date <= minEndDate);
-            const isBlocked = BLOCKED_STATUSES.has(ds) || isPast || isBeforeOrSameAsStart;
+            const isBlocked = BLOCKED_STATUSES.has(ds) || isPast;
             const isStart   = sameDay(date, startDO);
             const isEnd     = sameDay(date, endDO);
             const inRange   = startDO && endDO && date > startDO && date < endDO;
