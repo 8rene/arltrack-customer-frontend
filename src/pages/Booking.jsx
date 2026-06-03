@@ -219,6 +219,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
 
   const [currentStep,       setCurrentStep]       = useState(1);
   const [serviceType,       setServiceType]        = useState('');
+  const [otherServiceNote,  setOtherServiceNote]   = useState('');
   const [duration,          setDuration]           = useState(initVal('duration',        'duration'));
   const [startDate,         setStartDate]          = useState(initVal('startDate',       'startDate'));
   const [startTime,         setStartTime]          = useState(initVal('startTime',       'startTime'));
@@ -397,6 +398,13 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
     setCalViews(prev => {
       const next = [...prev];
       next[idx]  = new Date(prev[idx].getFullYear(), prev[idx].getMonth() + dir, 1);
+      // Keep calendars in sync: left can't go past right, right can't go before left
+      if (idx === 0 && next[0] >= next[1]) {
+        next[1] = new Date(next[0].getFullYear(), next[0].getMonth() + 1, 1);
+      }
+      if (idx === 1 && next[1] <= next[0]) {
+        next[0] = new Date(next[1].getFullYear(), next[1].getMonth() - 1, 1);
+      }
       return next;
     });
   };
@@ -456,6 +464,8 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
     const numDays   = new Date(year, month + 1, 0).getDate();
     const startDO   = startDate ? toMidnight(new Date(startDate)) : null;
     const endDO     = endDate   ? toMidnight(new Date(endDate))   : null;
+    // Right calendar (idx=1): block all dates on or before the selected startDate
+    const rightCalMinDate = (idx === 1 && startDO) ? startDO : null;
 
     return (
       <div key={idx} className="border-2 border-gray-200 rounded-2xl p-4">
@@ -478,7 +488,8 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
             const ds     = dateStatuses[key] || 'available';
             const style  = DATE_STYLES[ds] || DATE_STYLES.available;
             const isPast = date < today;
-            const isBlocked = BLOCKED_STATUSES.has(ds) || isPast;
+            const isBeforeStart = !!(rightCalMinDate && date <= rightCalMinDate);
+            const isBlocked = BLOCKED_STATUSES.has(ds) || isPast || isBeforeStart;
             const isStart   = sameDay(date, startDO);
             const isEnd     = sameDay(date, endDO);
             const inRange   = startDO && endDO && date > startDO && date < endDO;
@@ -539,6 +550,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
     if (currentStep === 1 && !selectedCar)  e.vehicle = 'Please select a vehicle.';
     if (currentStep === 2) {
       if (!serviceType)     e.serviceType     = 'Choose a service.';
+      if (serviceType === 'Others' && !otherServiceNote.trim()) e.serviceType = 'Please describe the service.';
       if (!duration)        e.duration        = 'Choose a duration.';
       if (!startDate)       e.startDate       = 'Select a start date.';
       if (!startTime)       e.startTime       = 'Set a pickup time.';
@@ -648,7 +660,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
         body: JSON.stringify({
           userID:          user?.userID    || "",
           carID:           selectedCar?.carID || "",
-          serviceType,
+          serviceType: serviceType === "Others" ? otherServiceNote || "Others" : serviceType,
           duration,
           startDate,
           startTime,
@@ -706,7 +718,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
   const resetBooking = () => {
     clearDraft();
     setShowConfirmModal(false); setCurrentStep(1); setSelectedCar(null);
-    setServiceType(''); setDuration(''); setStartDate(''); setStartTime('');
+    setServiceType(''); setOtherServiceNote(''); setDuration(''); setStartDate(''); setStartTime('');
     setEndDate(''); setEndTime(''); setPickupLocation(DEFAULT_LOCATION);
     setDropoffLocation(DEFAULT_LOCATION); setDestination(''); setDriveType('chauffeur');
     setFirstName(''); setLastName(''); setContact(''); setEmail('');
@@ -841,18 +853,39 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
                     {serviceTypesLoading
                       ? <div className="text-sm text-gray-400 animate-pulse">Loading services…</div>
                       : (
-                        <div className="grid grid-cols-2 gap-3">
-                          {serviceTypes.map(s => (
-                            <button key={s.serviceID} type="button"
-                              onClick={() => setServiceType(s.serviceType)}
+                        <>
+                          <div className="grid grid-cols-2 gap-3">
+                            {serviceTypes.map(s => (
+                              <button key={s.serviceID} type="button"
+                                onClick={() => { setServiceType(s.serviceType); setOtherServiceNote(''); }}
+                                className={`px-4 py-3 rounded-xl border-2 text-sm font-medium text-left transition-colors ${
+                                  serviceType === s.serviceType
+                                    ? 'border-arl-secondary bg-blue-50 text-arl-primary'
+                                    : 'border-gray-300 text-gray-700 hover:border-arl-primary'}`}>
+                                {s.serviceType}
+                              </button>
+                            ))}
+                            <button type="button"
+                              onClick={() => setServiceType('Others')}
                               className={`px-4 py-3 rounded-xl border-2 text-sm font-medium text-left transition-colors ${
-                                serviceType === s.serviceType
+                                serviceType === 'Others'
                                   ? 'border-arl-secondary bg-blue-50 text-arl-primary'
                                   : 'border-gray-300 text-gray-700 hover:border-arl-primary'}`}>
-                              {s.serviceType}
+                              Others
                             </button>
-                          ))}
-                        </div>
+                          </div>
+                          {serviceType === 'Others' && (
+                            <div className="mt-3">
+                              <input
+                                type="text"
+                                placeholder="Please describe your service…"
+                                value={otherServiceNote}
+                                onChange={e => setOtherServiceNote(e.target.value)}
+                                className="w-full px-4 py-3 rounded-xl border-2 border-arl-secondary bg-blue-50 text-sm text-arl-dark placeholder-gray-400 focus:outline-none focus:border-arl-primary transition-colors"
+                              />
+                            </div>
+                          )}
+                        </>
                       )
                     }
                     {errors.serviceType && <p className="text-arl-cta text-xs mt-2">{errors.serviceType}</p>}
