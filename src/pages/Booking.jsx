@@ -398,13 +398,6 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
     setCalViews(prev => {
       const next = [...prev];
       next[idx]  = new Date(prev[idx].getFullYear(), prev[idx].getMonth() + dir, 1);
-      // Keep calendars in sync: left can't go past right, right can't go before left
-      if (idx === 0 && next[0] >= next[1]) {
-        next[1] = new Date(next[0].getFullYear(), next[0].getMonth() + 1, 1);
-      }
-      if (idx === 1 && next[1] <= next[0]) {
-        next[0] = new Date(next[1].getFullYear(), next[1].getMonth() - 1, 1);
-      }
       return next;
     });
   };
@@ -431,6 +424,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
         setEndDate('');
         setEndTime('');
         setStartTime('');
+
       } else {
         // Start is set, no end yet → this click is the end date
         const clickedDate = new Date(key);
@@ -464,8 +458,6 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
     const numDays   = new Date(year, month + 1, 0).getDate();
     const startDO   = startDate ? toMidnight(new Date(startDate)) : null;
     const endDO     = endDate   ? toMidnight(new Date(endDate))   : null;
-    // Right calendar (idx=1): block all dates on or before the selected startDate
-    const rightCalMinDate = (idx === 1 && startDO) ? startDO : null;
 
     return (
       <div key={idx} className="border-2 border-gray-200 rounded-2xl p-4">
@@ -488,8 +480,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
             const ds     = dateStatuses[key] || 'available';
             const style  = DATE_STYLES[ds] || DATE_STYLES.available;
             const isPast = date < today;
-            const isBeforeStart = !!(rightCalMinDate && date <= rightCalMinDate);
-            const isBlocked = BLOCKED_STATUSES.has(ds) || isPast || isBeforeStart;
+            const isBlocked = BLOCKED_STATUSES.has(ds) || isPast;
             const isStart   = sameDay(date, startDO);
             const isEnd     = sameDay(date, endDO);
             const inRange   = startDO && endDO && date > startDO && date < endDO;
