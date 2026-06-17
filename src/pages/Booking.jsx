@@ -1236,7 +1236,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
                     {[
                       { key: 'gcash',    label: 'GCash',       logo: '💙' },
                       { key: 'maya',     label: 'Maya',        logo: '💚' },
-                      { key: 'paymongo', label: 'Pay Online',  logo: '💳' },
+                      { key: 'paymongo', label: 'QRPH / QR Code', logo: '📱' },
                     ].map(({ key, label, logo }) => (
                       <button key={key} type="button"
                         onClick={() => { setPaymentMethod(key); setGcashReference(''); setPaymentScreenshot(null); setScreenshotPreview(''); }}
@@ -1255,24 +1255,24 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
                   {paymentMethod === 'paymongo' && (
                     <div className="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-5 space-y-3">
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl">💳</span>
+                        <span className="text-2xl">📱</span>
                         <div>
-                          <p className="font-bold text-indigo-800 text-sm">Pay Online via PayMongo</p>
-                          <p className="text-xs text-indigo-600">Accepts GCash, Maya, Credit/Debit Card</p>
+                          <p className="font-bold text-indigo-800 text-sm">Pay via QRPH</p>
+                          <p className="text-xs text-indigo-600">Scan QR using GCash, Maya, BPI, UnionBank, at iba pa</p>
                         </div>
                       </div>
                       <p className="text-sm text-indigo-700">
-                        You'll be redirected to a secure PayMongo checkout page to complete your payment of{' '}
+                        Ire-redirect ka sa secure na PayMongo page na may QR code. I-scan lang gamit ang iyong banking app para makumpleto ang payment na{' '}
                         <strong>₱{getPayNow().toLocaleString()}</strong>.
                       </p>
                       <p className="text-xs text-indigo-500">
-                        ✅ No need to upload a screenshot — payment is confirmed automatically.
+                        ✅ Hindi na kailangan mag-upload ng screenshot — awtomatiko itong kino-confirm.
                       </p>
                       <div className="flex items-center gap-2 flex-wrap text-xs text-indigo-400">
                         <span className="bg-white border border-indigo-200 px-2 py-0.5 rounded-full">GCash</span>
                         <span className="bg-white border border-indigo-200 px-2 py-0.5 rounded-full">Maya</span>
-                        <span className="bg-white border border-indigo-200 px-2 py-0.5 rounded-full">Visa</span>
-                        <span className="bg-white border border-indigo-200 px-2 py-0.5 rounded-full">Mastercard</span>
+                        <span className="bg-white border border-indigo-200 px-2 py-0.5 rounded-full">BPI</span>
+                        <span className="bg-white border border-indigo-200 px-2 py-0.5 rounded-full">UnionBank</span>
                       </div>
                     </div>
                   )}
