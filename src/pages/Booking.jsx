@@ -504,8 +504,17 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
                 type="button"
                 className={cls}
                 title={!isPast && ds !== 'available' ? style.label : undefined}
-                onClick={() => !isBlocked && handleDayClick(date)}
-                onMouseEnter={() => { if (startDO && !endDO && !isBlocked) setHoverDate(date); }}
+                onClick={() => {
+  if (isBlocked) return;
+  if (duration === '12 Hours' && idx === 1) return;
+  handleDayClick(date);
+}}
+onMouseEnter={() => {
+  if (startDO && !endDO && !isBlocked) {
+    if (duration === '12 Hours' && idx === 1) return;
+    setHoverDate(date);
+  }
+}}
                 onMouseLeave={() => setHoverDate(null)}
                 disabled={isBlocked}>
                 {i + 1}
