@@ -255,6 +255,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
   const [showAuthModal,     setShowAuthModal]     = useState(false);
   const [bookingReference, setBookingReference] = useState('');
   const [loading,          setLoading]          = useState(false);
+  const [paymongoLoading,  setPaymongoLoading]  = useState(false);
   const [hoverDate,        setHoverDate]        = useState(null);
 
   // Calendar view: two months — start from the month of the pre-selected startDate if available
@@ -532,7 +533,10 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
     if (currentStep === 1) return !!selectedCar;
     if (currentStep === 2) return !!(serviceType && duration && startDate && startTime && endDate && endTime && pickupLocation && dropoffLocation && destination && !codingError);
     if (currentStep === 3) return !!(firstName && lastName && /^(\+639|09)\d{9}$/.test(contact) && /\S+@\S+\.\S+/.test(email));
-    if (currentStep === 4) return !!(gcashReference && paymentScreenshot);
+    if (currentStep === 4) {
+      if (paymentMethod === 'paymongo') return true;
+      return !!(gcashReference && paymentScreenshot);
+    }
     return true;
   };
 
@@ -560,8 +564,10 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
       else if (!/\S+@\S+\.\S+/.test(email)) e.email = 'Invalid email.';
     }
     if (currentStep === 4) {
-      if (!gcashReference)    e.gcashReference    = 'Reference number required.';
-      if (!paymentScreenshot) e.paymentScreenshot = 'Please upload your payment screenshot.';
+      if (paymentMethod !== 'paymongo') {
+        if (!gcashReference)    e.gcashReference    = 'Reference number required.';
+        if (!paymentScreenshot) e.paymentScreenshot = 'Please upload your payment screenshot.';
+      }
     }
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -605,6 +611,31 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handlePaymongoCheckout = async (bookingID, paymentID) => {
+    setPaymongoLoading(true);
+    try {
+      const token = localStorage.getItem("arl_token");
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/paymongo/create-link`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          bookingID,
+          paymentID,
+          amount: getPayNow(),
+          description: `ARL Track Booking #${bookingID}`,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to create payment link.");
+      // Redirect to PayMongo checkout — paymentID in return URL so we can poll status
+      window.location.href = data.checkoutUrl + `?paymentID=${paymentID}`;
+    } catch (err) {
+      alert(err.message || "Could not connect to PayMongo. Please try again.");
+    } finally {
+      setPaymongoLoading(false);
+    }
+  };
 
   const handleNext = async () => {
     if (!validateStep()) return;
@@ -695,6 +726,14 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
       }
 
       setBookingReference(data.bookingID);
+
+      // If PayMongo, redirect to checkout instead of showing confirmation modal
+      if (paymentMethod === 'paymongo') {
+        await handlePaymongoCheckout(data.bookingID, data.paymentID);
+        setLoading(false);
+        return;
+      }
+
       setShowConfirmModal(true);
 
     } catch (err) {
@@ -1191,27 +1230,55 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
                     Remaining balance on pickup: <strong>₱{getBalance().toLocaleString()}</strong>
                   </div>
 
-                  {/* Payment method — GCash and Maya only */}
+                  {/* Payment method — GCash, Maya, and PayMongo */}
                   <label className="block text-sm font-semibold text-arl-dark mb-3">Payment Method</label>
-                  <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="grid grid-cols-3 gap-4 mb-6">
                     {[
-                      { key: 'gcash', label: 'GCash',  logo: '💙' },
-                      { key: 'maya',  label: 'Maya',   logo: '💚' },
+                      { key: 'gcash',    label: 'GCash',       logo: '💙' },
+                      { key: 'maya',     label: 'Maya',        logo: '💚' },
+                      { key: 'paymongo', label: 'Pay Online',  logo: '💳' },
                     ].map(({ key, label, logo }) => (
                       <button key={key} type="button"
                         onClick={() => { setPaymentMethod(key); setGcashReference(''); setPaymentScreenshot(null); setScreenshotPreview(''); }}
-                        className={`flex items-center justify-center gap-3 px-6 py-4 rounded-xl border-2 font-bold text-lg transition-all ${
+                        className={`flex flex-col items-center justify-center gap-2 px-4 py-4 rounded-xl border-2 font-bold transition-all ${
                           paymentMethod === key
                             ? 'border-arl-secondary bg-blue-50 text-arl-primary shadow-md'
                             : 'border-gray-200 text-gray-600 hover:border-arl-primary'
                         }`}>
                         <span className="text-2xl">{logo}</span>
-                        {label}
+                        <span className="text-sm">{label}</span>
                       </button>
                     ))}
                   </div>
 
-                  {/* Reference number + screenshot upload */}
+                  {/* PayMongo — online checkout (no ref/screenshot needed) */}
+                  {paymentMethod === 'paymongo' && (
+                    <div className="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-5 space-y-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">💳</span>
+                        <div>
+                          <p className="font-bold text-indigo-800 text-sm">Pay Online via PayMongo</p>
+                          <p className="text-xs text-indigo-600">Accepts GCash, Maya, Credit/Debit Card</p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-indigo-700">
+                        You'll be redirected to a secure PayMongo checkout page to complete your payment of{' '}
+                        <strong>₱{getPayNow().toLocaleString()}</strong>.
+                      </p>
+                      <p className="text-xs text-indigo-500">
+                        ✅ No need to upload a screenshot — payment is confirmed automatically.
+                      </p>
+                      <div className="flex items-center gap-2 flex-wrap text-xs text-indigo-400">
+                        <span className="bg-white border border-indigo-200 px-2 py-0.5 rounded-full">GCash</span>
+                        <span className="bg-white border border-indigo-200 px-2 py-0.5 rounded-full">Maya</span>
+                        <span className="bg-white border border-indigo-200 px-2 py-0.5 rounded-full">Visa</span>
+                        <span className="bg-white border border-indigo-200 px-2 py-0.5 rounded-full">Mastercard</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* GCash / Maya — manual ref + screenshot */}
+                  {paymentMethod !== 'paymongo' && (
                   <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 space-y-4">
                     <p className="text-sm text-gray-600">
                       Send <strong>₱{getPayNow().toLocaleString()}</strong> to our {paymentMethod === 'gcash' ? 'GCash' : 'Maya'} number first, then fill in the details below.
@@ -1293,6 +1360,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
                       )}
                     </div>
                   </div>
+                  )}
                 </div>
               )}
 
