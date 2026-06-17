@@ -401,9 +401,7 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
   const navMonth = (idx, dir) => {
     setCalViews(prev => {
       const next = [...prev];
-      // Always move both calendars together so they stay in sync (current + next month)
-      next[0] = new Date(prev[0].getFullYear(), prev[0].getMonth() + dir, 1);
-      next[1] = new Date(next[0].getFullYear(), next[0].getMonth() + 1, 1);
+      next[idx]  = new Date(prev[idx].getFullYear(), prev[idx].getMonth() + dir, 1);
       return next;
     });
   };
@@ -469,11 +467,9 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
       <div key={idx} className="border-2 border-gray-200 rounded-2xl p-4">
         <div className="flex items-center justify-between mb-4">
           <button type="button" onClick={() => navMonth(idx, -1)}
-            style={{ visibility: idx === 1 ? 'hidden' : 'visible' }}
             className="w-9 h-9 flex items-center justify-center rounded-xl border-2 border-gray-200 hover:bg-arl-primary hover:text-white hover:border-arl-primary text-gray-600 text-xl font-bold transition-colors">‹</button>
           <span className="text-base font-bold text-arl-dark">{MONTHS[month]} {year}</span>
           <button type="button" onClick={() => navMonth(idx, 1)}
-            style={{ visibility: idx === 0 ? 'hidden' : 'visible' }}
             className="w-9 h-9 flex items-center justify-center rounded-xl border-2 border-gray-200 hover:bg-arl-primary hover:text-white hover:border-arl-primary text-gray-600 text-xl font-bold transition-colors">›</button>
         </div>
         <div className="grid grid-cols-7 gap-1 mb-2">
@@ -488,7 +484,6 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
             const ds     = dateStatuses[key] || 'available';
             const style  = DATE_STYLES[ds] || DATE_STYLES.available;
             const isPast = date < today;
-            const isSecondCalendar12H = duration === '12 Hours' && idx === 1;
             const isBlocked = BLOCKED_STATUSES.has(ds) || isPast;
             const isStart   = sameDay(date, startDO);
             const isEnd     = sameDay(date, endDO);
@@ -497,7 +492,6 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
 
             let cls = `text-center text-sm py-2 rounded-xl transition-all font-medium relative `;
             if (isPast)                    cls += 'text-gray-300 cursor-not-allowed ';
-            else if (isSecondCalendar12H)  cls += 'text-gray-300 cursor-not-allowed ';
             else if (isBlocked && !isPast) cls += `${style.bg} ${style.text} cursor-not-allowed text-xs `;
             else if (isStart || isEnd)     cls += 'bg-arl-primary text-white cursor-pointer font-black shadow-md scale-105 ';
             else if (inRange)              cls += 'bg-arl-secondary/20 text-arl-primary cursor-pointer ';
@@ -510,17 +504,8 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
                 type="button"
                 className={cls}
                 title={!isPast && ds !== 'available' ? style.label : undefined}
-                onClick={() => {
-                  if (isBlocked) return;
-                  if (duration === '12 Hours' && idx === 1) return; // second calendar not clickable for 12H
-                  handleDayClick(date);
-                }}
-                onMouseEnter={() => {
-                  if (startDO && !endDO && !isBlocked) {
-                    if (duration === '12 Hours' && idx === 1) return;
-                    setHoverDate(date);
-                  }
-                }}
+                onClick={() => !isBlocked && handleDayClick(date)}
+                onMouseEnter={() => { if (startDO && !endDO && !isBlocked) setHoverDate(date); }}
                 onMouseLeave={() => setHoverDate(null)}
                 disabled={isBlocked}>
                 {i + 1}
