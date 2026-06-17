@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, CheckCircle, MapPin } from 'lucide-react';
 import MapPicker from '../components/shared/MapPicker';
-import gcashLogo  from '../assets/gcash-logo.png';
-import mayaLogo   from '../assets/paymaya-logo.jpg';
-import qrphLogo   from '../assets/qrph-logo.webp';
+import gcashLogo  from '../assets/images/GCash_Logo.png';
+import mayaLogo   from '../assets/images/PayMayaLogo.jpg';
+import qrphLogo   from '../assets/images/qr-ph-logo-6f76723590.webp';
 
 const DEFAULT_LOCATION = 'Saog, Marilao, Bulacan';
 const LS_KEY = 'arl_booking_draft';
