@@ -2,6 +2,9 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, CheckCircle, MapPin } from 'lucide-react';
 import MapPicker from '../components/shared/MapPicker';
+import gcashLogo  from '../assets/gcash-logo.png';
+import mayaLogo   from '../assets/paymaya-logo.jpg';
+import qrphLogo   from '../assets/qrph-logo.webp';
 
 const DEFAULT_LOCATION = 'Saog, Marilao, Bulacan';
 const LS_KEY = 'arl_booking_draft';
@@ -1234,19 +1237,19 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
                   <label className="block text-sm font-semibold text-arl-dark mb-3">Payment Method</label>
                   <div className="grid grid-cols-3 gap-4 mb-6">
                     {[
-                      { key: 'gcash',    label: 'GCash',       logo: '💙' },
-                      { key: 'maya',     label: 'Maya',        logo: '💚' },
-                      { key: 'paymongo', label: 'QRPH / QR Code', logo: '📱' },
-                    ].map(({ key, label, logo }) => (
-                      <button key={key} type="button"
-                        onClick={() => { setPaymentMethod(key); setGcashReference(''); setPaymentScreenshot(null); setScreenshotPreview(''); }}
+                      { key: 'gcash',    label: 'GCash', img: gcashLogo  },
+                      { key: 'maya',     label: 'Maya',  img: mayaLogo   },
+                      { key: 'paymongo', label: 'QRPH',  img: qrphLogo   },
+                    ].map((item) => (
+                      <button key={item.key} type="button"
+                        onClick={() => { setPaymentMethod(item.key); setGcashReference(''); setPaymentScreenshot(null); setScreenshotPreview(''); }}
                         className={`flex flex-col items-center justify-center gap-2 px-4 py-4 rounded-xl border-2 font-bold transition-all ${
-                          paymentMethod === key
+                          paymentMethod === item.key
                             ? 'border-arl-secondary bg-blue-50 text-arl-primary shadow-md'
                             : 'border-gray-200 text-gray-600 hover:border-arl-primary'
                         }`}>
-                        <span className="text-2xl">{logo}</span>
-                        <span className="text-sm">{label}</span>
+                        <img src={item.img} alt={item.label} className="w-12 h-10 object-contain rounded-md" />
+                        <span className="text-sm font-bold">{item.label}</span>
                       </button>
                     ))}
                   </div>
