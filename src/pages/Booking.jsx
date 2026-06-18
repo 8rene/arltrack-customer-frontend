@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, CheckCircle, MapPin } from 'lucide-react';
 import MapPicker from '../components/shared/MapPicker';
-import gcashLogo  from '../assets/gcash-logo.png';
-import mayaLogo   from '../assets/paymaya-logo.jpg';
-import qrphLogo   from '../assets/qrph-logo.webp';
+import gcashLogo  from '../assets/images/GCash_Logo.png';
+import mayaLogo   from '../assets/images/PayMayaLogo.jpg';
+import qrphLogo   from '../assets/images/qr-ph-logo-6f76723590.webp';
 
 const DEFAULT_LOCATION = 'Saog, Marilao, Bulacan';
 const LS_KEY = 'arl_booking_draft';
@@ -266,10 +266,9 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
   const [calViews, setCalViews] = useState(() => {
     const sd = initVal('startDate', 'startDate');
     const base = sd ? new Date(sd + 'T00:00:00') : new Date();
-    // Both calendars show the SAME month — second is just a read-only reference copy
     return [
       new Date(base.getFullYear(), base.getMonth(), 1),
-      new Date(base.getFullYear(), base.getMonth(), 1),
+      new Date(base.getFullYear(), base.getMonth() + 1, 1),
     ];
   });
 
@@ -399,10 +398,11 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
   };
 
   // ── Calendar rendering ───────────────────────────────────────
-  const navMonth = (dir) => {
+  const navMonth = (idx, dir) => {
     setCalViews(prev => {
-      const newMonth = new Date(prev[0].getFullYear(), prev[0].getMonth() + dir, 1);
-      return [newMonth, newMonth]; // both calendars always show same month
+      const next = [...prev];
+      next[idx]  = new Date(prev[idx].getFullYear(), prev[idx].getMonth() + dir, 1);
+      return next;
     });
   };
 
@@ -466,13 +466,10 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
     return (
       <div key={idx} className="border-2 border-gray-200 rounded-2xl p-4">
         <div className="flex items-center justify-between mb-4">
-          {/* Only first calendar shows nav arrows — both move together */}
-          <button type="button" onClick={() => navMonth(-1)}
-            style={{ visibility: idx === 0 ? 'visible' : 'hidden' }}
+          <button type="button" onClick={() => navMonth(idx, -1)}
             className="w-9 h-9 flex items-center justify-center rounded-xl border-2 border-gray-200 hover:bg-arl-primary hover:text-white hover:border-arl-primary text-gray-600 text-xl font-bold transition-colors">‹</button>
           <span className="text-base font-bold text-arl-dark">{MONTHS[month]} {year}</span>
-          <button type="button" onClick={() => navMonth(1)}
-            style={{ visibility: idx === 0 ? 'visible' : 'hidden' }}
+          <button type="button" onClick={() => navMonth(idx, 1)}
             className="w-9 h-9 flex items-center justify-center rounded-xl border-2 border-gray-200 hover:bg-arl-primary hover:text-white hover:border-arl-primary text-gray-600 text-xl font-bold transition-colors">›</button>
         </div>
         <div className="grid grid-cols-7 gap-1 mb-2">
@@ -487,15 +484,14 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
             const ds     = dateStatuses[key] || 'available';
             const style  = DATE_STYLES[ds] || DATE_STYLES.available;
             const isPast = date < today;
-            const isReadOnly = idx === 1;
             const isBlocked = BLOCKED_STATUSES.has(ds) || isPast;
-            const isStart   = idx === 0 && sameDay(date, startDO);
-            const isEnd     = idx === 0 && sameDay(date, endDO);
-            const inRange   = idx === 0 && startDO && endDO && date > startDO && date < endDO;
-            const isHover   = idx === 0 && hoverDate && startDO && !endDO && date > startDO && date <= toMidnight(hoverDate);
+            const isStart   = sameDay(date, startDO);
+            const isEnd     = sameDay(date, endDO);
+            const inRange   = startDO && endDO && date > startDO && date < endDO;
+            const isHover   = hoverDate && startDO && !endDO && date > startDO && date <= toMidnight(hoverDate);
 
             let cls = `text-center text-sm py-2 rounded-xl transition-all font-medium relative `;
-            if (isPast || isReadOnly)      cls += 'text-gray-400 cursor-default ';
+            if (isPast)                    cls += 'text-gray-300 cursor-not-allowed ';
             else if (isBlocked && !isPast) cls += `${style.bg} ${style.text} cursor-not-allowed text-xs `;
             else if (isStart || isEnd)     cls += 'bg-arl-primary text-white cursor-pointer font-black shadow-md scale-105 ';
             else if (inRange)              cls += 'bg-arl-secondary/20 text-arl-primary cursor-pointer ';
@@ -508,15 +504,8 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
                 type="button"
                 className={cls}
                 title={!isPast && ds !== 'available' ? style.label : undefined}
-                onClick={() => {
-                  if (isBlocked) return;
-                  if (idx === 1) return; // second calendar is read-only reference — never clickable
-                  handleDayClick(date);
-                }}
-                onMouseEnter={() => {
-                  if (idx === 1) return;
-                  if (startDO && !endDO && !isBlocked) setHoverDate(date);
-                }}
+                onClick={() => !isBlocked && handleDayClick(date)}
+                onMouseEnter={() => { if (startDO && !endDO && !isBlocked) setHoverDate(date); }}
                 onMouseLeave={() => setHoverDate(null)}
                 disabled={isBlocked}>
                 {i + 1}
@@ -992,7 +981,6 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
                       <label className="block text-sm font-semibold text-arl-dark mb-1">
                         {duration === '22 Hours' ? (startDate ? (endDate ? 'Date Range Selected' : 'Now pick End Date') : 'Pick Start Date') : 'Pickup Date'}
                       </label>
-                      <p className="text-xs text-indigo-500 mb-1">💡 Left calendar = select date · Right calendar = availability reference (same month)</p>
                       <p className="text-xs text-gray-500 mb-3">
                         {duration === '22 Hours'
                           ? !startDate
