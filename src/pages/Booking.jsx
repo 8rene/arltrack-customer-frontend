@@ -489,7 +489,6 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
             const isPast = date < today;
             const isReadOnly = idx === 1;
             const isBlocked = BLOCKED_STATUSES.has(ds) || isPast;
-            const isReadOnly = idx === 1; // second calendar is always read-only
             const isStart   = idx === 0 && sameDay(date, startDO);
             const isEnd     = idx === 0 && sameDay(date, endDO);
             const inRange   = idx === 0 && startDO && endDO && date > startDO && date < endDO;
