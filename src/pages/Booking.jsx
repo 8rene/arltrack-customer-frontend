@@ -220,14 +220,21 @@ const BookingPage = ({ user = null, userDetails = null, onUserDetailsUpdate }) =
         ? draft[draftKey]
         : fallback;
 
+  // Guard against a stale/past date inherited from Hero navigation state or
+  // a leftover localStorage draft (e.g. from an earlier session) — never
+  // trust an inbound startDate/endDate that's already in the past.
+  const todayStrInit = new Date().toISOString().split('T')[0];
+  const inboundStartDate = initVal('startDate', 'startDate');
+  const inboundStartDateIsPast = !!inboundStartDate && inboundStartDate < todayStrInit;
+
   const [currentStep,       setCurrentStep]       = useState(1);
   const [serviceType,       setServiceType]        = useState('');
   const [otherServiceNote,  setOtherServiceNote]   = useState('');
   const [duration,          setDuration]           = useState(initVal('duration',        'duration'));
-  const [startDate,         setStartDate]          = useState(initVal('startDate',       'startDate'));
-  const [startTime,         setStartTime]          = useState(initVal('startTime',       'startTime'));
-  const [endDate,           setEndDate]            = useState(initVal('endDate',         'endDate'));
-  const [endTime,           setEndTime]            = useState(initVal('endTime',         'endTime'));
+  const [startDate,         setStartDate]          = useState(inboundStartDateIsPast ? '' : inboundStartDate);
+  const [startTime,         setStartTime]          = useState(inboundStartDateIsPast ? '' : initVal('startTime', 'startTime'));
+  const [endDate,           setEndDate]            = useState(inboundStartDateIsPast ? '' : initVal('endDate',   'endDate'));
+  const [endTime,           setEndTime]            = useState(inboundStartDateIsPast ? '' : initVal('endTime',   'endTime'));
   const [pickupLocation,    setPickupLocation]     = useState(initVal('pickupLocation',  'pickupLocation',  DEFAULT_LOCATION));
   const [dropoffLocation,   setDropoffLocation]    = useState(initVal('dropoffLocation', 'dropoffLocation', DEFAULT_LOCATION));
   const [destination,       setDestination]        = useState(initVal('destination',     'destination'));
