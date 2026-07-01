@@ -4,7 +4,7 @@ import heroBg from "../../assets/images/web-hero-img.jpg";
 import MapPicker from "./MapPicker";
 
 const LOCATION_OPTIONS = [
-  "Villa Roma, Lias, Marilao, Bulacan",
+  "Villa Roma Phase V, Lias, Marilao, Bulacan",
   "Manila",
 ];
 
@@ -334,7 +334,6 @@ export default function Hero() {
         }}
         initialLabel={destination}
       />
-      
     </section>
   );
 }
