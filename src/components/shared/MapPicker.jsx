@@ -11,9 +11,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-// Default: Villa Roma 5, Marilao, Bulacan
+// Default: Saog, Marilao, Bulacan
 const DEFAULT_COORDS = [14.7767, 120.9650];
-const DEFAULT_LABEL  = 'Villa Roma 5, Marilao, Bulacan';
+const DEFAULT_LABEL  = 'Saog, Marilao, Bulacan';
 
 // Inner component: handles map click + drag
 const MapClickHandler = ({ onLocationChange }) => {
