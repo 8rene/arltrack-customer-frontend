@@ -334,6 +334,7 @@ export default function Hero() {
         }}
         initialLabel={destination}
       />
+      
     </section>
   );
 }
