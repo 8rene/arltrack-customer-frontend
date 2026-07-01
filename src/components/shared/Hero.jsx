@@ -4,7 +4,7 @@ import heroBg from "../../assets/images/web-hero-img.jpg";
 import MapPicker from "./MapPicker";
 
 const LOCATION_OPTIONS = [
-  "Saog, Marilao, Bulacan",
+  "Villa Roma 5, Marilao, Bulacan",
   "Manila",
 ];
 
@@ -45,13 +45,19 @@ export default function Hero() {
   // Load from localStorage on first render
   const draft = loadDraft();
 
+  // Guard against a stale/past draft date sitting in localStorage from a
+  // previous session — if it's already in the past, drop it instead of
+  // silently pre-filling an invalid date.
+  const todayStr = new Date().toISOString().split("T")[0];
+  const draftStartDateIsPast = !!draft.startDate && draft.startDate < todayStr;
+
   const [pickupLocation,   setPickupLocation]   = useState(draft.pickupLocation  || LOCATION_OPTIONS[0]);
   const [dropoffLocation,  setDropoffLocation]  = useState(draft.dropoffLocation || LOCATION_OPTIONS[0]);
   const [sameAsPickup,     setSameAsPickup]     = useState(draft.sameAsPickup    || false);
   const [selectedDuration, setSelectedDuration] = useState(draft.duration        || "");
-  const [startDate,        setStartDate]        = useState(draft.startDate       || "");
+  const [startDate,        setStartDate]        = useState(draftStartDateIsPast ? "" : (draft.startDate || ""));
   const [startTime,        setStartTime]        = useState(draft.startTime       || "");
-  const [endDate,          setEndDate]          = useState(draft.endDate         || "");
+  const [endDate,          setEndDate]          = useState(draftStartDateIsPast ? "" : (draft.endDate   || ""));
   const [endTime,          setEndTime]          = useState(draft.endTime         || "");
   const [destination,      setDestination]      = useState(draft.destination     || "");
   const [mapOpen,          setMapOpen]          = useState(false);
