@@ -11,9 +11,9 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 });
 
-// Default: Saog, Marilao, Bulacan
-const DEFAULT_COORDS = [14.7767, 120.9650];
-const DEFAULT_LABEL  = 'Saog, Marilao, Bulacan';
+// Default: Villa Roma 5, Lias, Marilao, Bulacan
+const DEFAULT_COORDS = [14.7619, 120.9603];
+const DEFAULT_LABEL  = 'Villa Roma 5, Marilao, Bulacan';
 
 // Inner component: handles map click + drag
 const MapClickHandler = ({ onLocationChange }) => {
@@ -125,7 +125,6 @@ const MapPicker = ({ isOpen, onClose, onConfirm, initialLabel = '' }) => {
 
   const handleConfirm = () => {
     onConfirm(address);
-    // onClose is called by parent's onConfirm handler in LocationInput
   };
 
   if (!isOpen) return null;
@@ -167,7 +166,6 @@ const MapPicker = ({ isOpen, onClose, onConfirm, initialLabel = '' }) => {
           {searchResults.length > 0 && (
             <div className="mt-2 border border-gray-200 rounded-xl overflow-hidden shadow-lg max-h-60 overflow-y-auto">
               {searchResults.map((r, i) => {
-                // Build a short readable label: name + road/suburb + city
                 const a = r.address || {};
                 const parts = [
                   r.name || r.display_name.split(',')[0],
@@ -175,7 +173,6 @@ const MapPicker = ({ isOpen, onClose, onConfirm, initialLabel = '' }) => {
                   a.city || a.municipality || a.town || a.village,
                   a.province || a.state,
                 ].filter(Boolean);
-                const shortLabel = [...new Set(parts)].join(', ');
                 return (
                   <button key={i}
                     onClick={() => handleSearchSelect(r)}
@@ -211,7 +208,6 @@ const MapPicker = ({ isOpen, onClose, onConfirm, initialLabel = '' }) => {
             <DraggableMarker position={markerPos} onDrag={handleLocationChange} />
           </MapContainer>
 
-          {/* Loading overlay */}
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-[500]">
               <div className="text-sm text-arl-primary font-semibold animate-pulse">Getting address…</div>
