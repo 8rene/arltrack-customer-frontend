@@ -4,7 +4,7 @@ import heroBg from "../../assets/images/web-hero-img.jpg";
 import MapPicker from "./MapPicker";
 
 const LOCATION_OPTIONS = [
-  "Saog, Marilao, Bulacan",
+  "Villa Roma, Lias, Marilao, Bulacan",
   "Manila",
 ];
 
