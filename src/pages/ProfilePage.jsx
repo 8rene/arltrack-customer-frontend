@@ -24,7 +24,7 @@ const fmtDT = (val) => {
 // ─────────────────────────────────────────────────────────────
 // PENCIL-EDIT FIELD
 // ─────────────────────────────────────────────────────────────
-const EditableField = ({ label, value, onSave, type = "text", placeholder = "", locked = false, lockNote = "" }) => {
+const EditableField = ({ label, value, onSave, type = "text", placeholder = "", locked = false, lockNote = "", maxLength }) => {
   const [editing,  setEditing]  = useState(false);
   const [draft,    setDraft]    = useState(value);
   const [saving,   setSaving]   = useState(false);
@@ -67,8 +67,14 @@ const EditableField = ({ label, value, onSave, type = "text", placeholder = "", 
             value={draft}
             placeholder={placeholder || label}
             onChange={e => setDraft(e.target.value)}
+            maxLength={maxLength}
             className="w-full px-4 py-3 rounded-xl border-2 border-arl-secondary text-sm focus:outline-none focus:ring-2 focus:ring-arl-secondary/30 bg-white"
           />
+          {maxLength && (
+            <p className={`text-xs mt-1 text-right ${draft.length >= maxLength ? "text-red-500" : "text-gray-400"}`}>
+              {draft.length}/{maxLength}
+            </p>
+          )}
           {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
           <div className="flex gap-2 mt-2">
             <button onClick={handleSave} disabled={saving}
@@ -743,6 +749,7 @@ const ProfilePage = ({ user }) => {
                       label="Username"
                       value={username}
                       onSave={(v) => saveField("username", v)}
+                      maxLength={12}
                     />
                     <div>
                       <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Account Status</label>

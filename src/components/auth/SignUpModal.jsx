@@ -674,6 +674,7 @@ const SignUpModal = ({ onClose, onSwitchToLogin }) => {
 
     if (step === 0) {
       if (!s0.username.trim())       return alert("Please enter a username.");
+      if (s0.username.trim().length > 12) return alert("Username must be 12 characters or less.");
       if (!s0.email.trim())          return alert("Please enter your email.");
       if (!s0.phoneDigits)           return alert("Please enter your phone number.");
       if (!phoneValid)               return alert("Phone must be 10 digits starting with 9.");
@@ -753,6 +754,7 @@ const SignUpModal = ({ onClose, onSwitchToLogin }) => {
                     className={fieldErrors.username ? inputErrCls : inputCls}
                     placeholder="Choose a unique username"
                     value={s0.username}
+                    maxLength={12}
                     onChange={(e) => { setS0((p) => ({ ...p, username: e.target.value })); setFieldErrors((p) => ({ ...p, username: "" })); }}
                     required autoComplete="username"
                   />
